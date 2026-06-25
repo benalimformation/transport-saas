@@ -127,7 +127,7 @@ export default function RentabilitePage() {
       const marge = caTotal > 0 ? (beneficeNet / caTotal) * 100 : 0;
 
       // Vérifier si des données existent
-      const hasData = caTotal > 0 || depensesTotal > 0 || facturesPayeesCount > 0 || livraisonsRealiseesCount > 0;
+      const hasData = caTotal > 0 || depensesTotal > 0 || (facturesPayeesCount || 0) > 0 || (livraisonsRealiseesCount || 0) > 0;
 
       setCaTotal(caTotal);
       setDepensesTotal(depensesTotal);
