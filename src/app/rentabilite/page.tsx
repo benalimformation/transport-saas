@@ -10,6 +10,9 @@ export default function RentabilitePage() {
   const [depensesTotal, setDepensesTotal] = useState(0);
   const [beneficeNet, setBeneficeNet] = useState(0);
   const [marge, setMarge] = useState(0);
+  const [facturesPayees, setFacturesPayees] = useState(0);
+  const [livraisonsRealisees, setLivraisonsRealisees] = useState(0);
+  const [hasData, setHasData] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,16 +100,42 @@ export default function RentabilitePage() {
 
       if (depensesError) throw depensesError;
 
+      // Récupérer le nombre de factures payées
+      const { count: facturesPayeesCount, error: facturesCountError } = await supabase
+        .from("factures")
+        .select("*", { count: "exact", head: true })
+        .eq("entreprise_id", idEntreprise)
+        .eq("statut", "Payée")
+        .gte("created_at", startDate.toISOString());
+
+      if (facturesCountError) throw facturesCountError;
+
+      // Récupérer le nombre de livraisons réalisées
+      const { count: livraisonsRealiseesCount, error: livraisonsCountError } = await supabase
+        .from("livraisons")
+        .select("*", { count: "exact", head: true })
+        .eq("entreprise_id", idEntreprise)
+        .eq("statut", "Livrée")
+        .gte("created_at", startDate.toISOString());
+
+      if (livraisonsCountError) throw livraisonsCountError;
+
       // Calculer les métriques
       const caTotal = facturesData?.reduce((sum, f) => sum + (f.montant_ttc || 0), 0) || 0;
       const depensesTotal = depensesData?.reduce((sum, d) => sum + (d.montant || 0), 0) || 0;
       const beneficeNet = caTotal - depensesTotal;
       const marge = caTotal > 0 ? (beneficeNet / caTotal) * 100 : 0;
 
+      // Vérifier si des données existent
+      const hasData = caTotal > 0 || depensesTotal > 0 || facturesPayeesCount > 0 || livraisonsRealiseesCount > 0;
+
       setCaTotal(caTotal);
       setDepensesTotal(depensesTotal);
       setBeneficeNet(beneficeNet);
       setMarge(marge);
+      setFacturesPayees(facturesPayeesCount || 0);
+      setLivraisonsRealisees(livraisonsRealiseesCount || 0);
+      setHasData(hasData);
     } catch (err) {
       setError("Erreur lors du chargement des données: " + (err as Error).message);
     } finally {
