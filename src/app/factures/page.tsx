@@ -12,57 +12,120 @@ type Facture = {
   date_facture: string | null;
   date_echeance: string | null;
   date_paiement: string | null;
+  entreprise_id: string | null;
 };
 
 export default function FacturesPage() {
   const [factures, setFactures] = useState<Facture[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
 
   useEffect(() => {
-    chargerFactures();
+    initialiserPage();
   }, []);
 
-  async function chargerFactures() {
-    const { data, error } = await supabase
-      .from("factures")
-      .select("*")
-      .order("date_facture", { ascending: false });
+  async function initialiserPage() {
+    setLoading(true);
+    setError(null);
 
-    if (error) {
-      alert(error.message);
-      return;
+    try {
+      // Vérifier la session utilisateur
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+
+      if (!userId) {
+        window.location.href = "/login";
+        return;
+      }
+
+      // Récupérer l'entreprise_id depuis profils
+      const { data: profil, error: profilError } = await supabase
+        .from("profils")
+        .select("entreprise_id")
+        .eq("id", userId)
+        .single();
+
+      if (profilError || !profil?.entreprise_id) {
+        setError("Entreprise introuvable pour cet utilisateur.");
+        return;
+      }
+
+      setEntrepriseId(profil.entreprise_id);
+      await chargerFactures(profil.entreprise_id);
+    } catch (err) {
+      setError("Erreur lors de l'initialisation: " + (err as Error).message);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    setFactures(data || []);
+  async function chargerFactures(idEntreprise: string) {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from("factures")
+        .select("*")
+        .eq("entreprise_id", idEntreprise)
+        .order("date_facture", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setFactures(data || []);
+    } catch (err) {
+      setError("Erreur lors du chargement des factures: " + (err as Error).message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function supprimerFacture(id: string) {
     if (!confirm("Supprimer cette facture ?")) return;
 
-    const { error } = await supabase.from("factures").delete().eq("id", id);
+    try {
+      const { error } = await supabase
+        .from("factures")
+        .delete()
+        .eq("id", id)
+        .eq("entreprise_id", entrepriseId);
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (error) {
+        throw error;
+      }
+
+      if (entrepriseId) {
+        await chargerFactures(entrepriseId);
+      }
+    } catch (err) {
+      setError("Erreur lors de la suppression: " + (err as Error).message);
     }
-
-    chargerFactures();
   }
 
   async function marquerPayee(id: string) {
-    const { error } = await supabase
-      .from("factures")
-      .update({
-        statut: "Payée",
-        date_paiement: new Date().toISOString().slice(0, 10),
-      })
-      .eq("id", id);
+    try {
+      const { error } = await supabase
+        .from("factures")
+        .update({
+          statut: "Payée",
+          date_paiement: new Date().toISOString().slice(0, 10),
+        })
+        .eq("id", id)
+        .eq("entreprise_id", entrepriseId);
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (error) {
+        throw error;
+      }
+
+      if (entrepriseId) {
+        await chargerFactures(entrepriseId);
+      }
+    } catch (err) {
+      setError("Erreur lors de la mise à jour: " + (err as Error).message);
     }
-
-    chargerFactures();
   }
 
   function formatDate(date: string | null) {
