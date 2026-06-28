@@ -20,6 +20,12 @@ export default function FacturesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
+  const [filtreStatut, setFiltreStatut] = useState<string | null>(null);
+  const [filtreDateDebut, setFiltreDateDebut] = useState<string | null>(null);
+  const [filtreDateFin, setFiltreDateFin] = useState<string | null>(null);
+  const [totalFactures, setTotalFactures] = useState<number>(0);
+  const [totalPayees, setTotalPayees] = useState<number>(0);
+  const [totalNonPayees, setTotalNonPayees] = useState<number>(0);
 
   useEffect(() => {
     initialiserPage();
@@ -65,21 +71,62 @@ export default function FacturesPage() {
     setError(null);
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("factures")
         .select("*")
         .eq("entreprise_id", idEntreprise)
         .order("date_facture", { ascending: false });
+
+      // Appliquer les filtres si définis
+      if (filtreStatut) {
+        query = query.eq("statut", filtreStatut);
+      }
+      if (filtreDateDebut) {
+        query = query.gte("date_facture", filtreDateDebut);
+      }
+      if (filtreDateFin) {
+        query = query.lte("date_facture", filtreDateFin);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
       }
 
       setFactures(data || []);
+
+      // Calculer les totaux
+      const total = data?.reduce((sum, facture) => sum + (facture.montant_ttc || 0), 0) || 0;
+      const totalPaye = data?.filter(f => f.statut === "Payée")
+        .reduce((sum, facture) => sum + (facture.montant_ttc || 0), 0) || 0;
+      const totalNonPaye = total - totalPaye;
+
+      setTotalFactures(total);
+      setTotalPayees(totalPaye);
+      setTotalNonPayees(totalNonPaye);
     } catch (err) {
       setError("Erreur lors du chargement des factures: " + (err as Error).message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  function appliquerFiltres() {
+    if (entrepriseId) {
+      chargerFactures(entrepriseId);
+    }
+  }
+
+  function reinitialiserFiltres() {
+    setFiltreStatut(null);
+    setFiltreDateDebut(null);
+    setFiltreDateFin(null);
+    setTotalFactures(0);
+    setTotalPayees(0);
+    setTotalNonPayees(0);
+    if (entrepriseId) {
+      chargerFactures(entrepriseId);
     }
   }
 
@@ -157,6 +204,75 @@ export default function FacturesPage() {
       >
         + Nouvelle facture
       </a>
+
+      {/* Section des filtres */}
+      <div className="mb-8 rounded-xl border border-gray-800 bg-gray-900 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end mb-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Statut</label>
+            <select
+              value={filtreStatut || ""}
+              onChange={(e) => setFiltreStatut(e.target.value || null)}
+              className="w-full rounded bg-gray-800 p-3"
+            >
+              <option value="">Tous les statuts</option>
+              <option value="Payée">Payée</option>
+              <option value="Non payée">Non payée</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Date début</label>
+            <input
+              type="date"
+              value={filtreDateDebut || ""}
+              onChange={(e) => setFiltreDateDebut(e.target.value || null)}
+              className="w-full rounded bg-gray-800 p-3"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Date fin</label>
+            <input
+              type="date"
+              value={filtreDateFin || ""}
+              onChange={(e) => setFiltreDateFin(e.target.value || null)}
+              className="w-full rounded bg-gray-800 p-3"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={appliquerFiltres}
+              className="rounded bg-blue-600 px-4 py-3 hover:bg-blue-700 flex-1"
+            >
+              Appliquer
+            </button>
+            <button
+              onClick={reinitialiserFiltres}
+              className="rounded bg-gray-600 px-4 py-3 hover:bg-gray-700 flex-1"
+            >
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+
+        {/* Affichage des totaux */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-lg bg-gray-800 p-4 text-center">
+            <p className="text-sm text-gray-400">Total factures</p>
+            <p className="text-xl font-bold text-white">{formatPrix(totalFactures)}</p>
+          </div>
+          <div className="rounded-lg bg-green-900 p-4 text-center">
+            <p className="text-sm text-green-300">Payées</p>
+            <p className="text-xl font-bold text-green-400">{formatPrix(totalPayees)}</p>
+          </div>
+          <div className="rounded-lg bg-red-900 p-4 text-center">
+            <p className="text-sm text-red-300">Non payées</p>
+            <p className="text-xl font-bold text-red-400">{formatPrix(totalNonPayees)}</p>
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-4">
         {factures.length === 0 ? (
