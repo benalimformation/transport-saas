@@ -12,11 +12,29 @@ type Depense = {
   entreprise_id: string;
 };
 
+// Catégories standardisées pour le transport
+const CATEGORIES_TRANSPORT = [
+  "Carburant",
+  "Péages",
+  "Entretien",
+  "Réparations",
+  "Assurance",
+  "Parking",
+  "Lavage",
+  "Pneus",
+  "Administratif",
+  "Autre"
+];
+
 export default function DepensesPage() {
   const [depenses, setDepenses] = useState<Depense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
+  const [filtreCategorie, setFiltreCategorie] = useState<string | null>(null);
+  const [filtreDateDebut, setFiltreDateDebut] = useState<string | null>(null);
+  const [filtreDateFin, setFiltreDateFin] = useState<string | null>(null);
+  const [totalFiltre, setTotalFiltre] = useState<number>(0);
 
   useEffect(() => {
     initialiserPage();
@@ -63,21 +81,54 @@ export default function DepensesPage() {
 
     try {
       // Charger les dépenses avec filtre entreprise_id
-      const { data, error } = await supabase
+      let query = supabase
         .from("depenses")
         .select("*")
         .eq("entreprise_id", idEntreprise)
         .order("date_depense", { ascending: false });
+
+      // Appliquer les filtres si ils sont définis
+      if (filtreCategorie) {
+        query = query.eq("categorie", filtreCategorie);
+      }
+      if (filtreDateDebut) {
+        query = query.gte("date_depense", filtreDateDebut);
+      }
+      if (filtreDateFin) {
+        query = query.lte("date_depense", filtreDateFin);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
       }
 
       setDepenses(data || []);
+
+      // Calculer le total des dépenses filtrées
+      const total = data?.reduce((sum, depense) => sum + (depense.montant || 0), 0) || 0;
+      setTotalFiltre(total);
     } catch (err) {
       setError("Erreur lors du chargement des dépenses: " + (err as Error).message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  function appliquerFiltres() {
+    if (entrepriseId) {
+      chargerDepenses(entrepriseId);
+    }
+  }
+
+  function reinitialiserFiltres() {
+    setFiltreCategorie(null);
+    setFiltreDateDebut(null);
+    setFiltreDateFin(null);
+    setTotalFiltre(0);
+    if (entrepriseId) {
+      chargerDepenses(entrepriseId);
     }
   }
 
@@ -101,7 +152,7 @@ export default function DepensesPage() {
         await chargerDepenses(entrepriseId);
       }
     } catch (err) {
-      alert("Erreur lors de la suppression: " + (err as Error).message);
+      setError("Erreur lors de la suppression: " + (err as Error).message);
     }
   }
 
@@ -163,6 +214,69 @@ export default function DepensesPage() {
         </div>
       </div>
 
+      {/* Section des filtres */}
+      <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+          <div>
+            <label className="block text-sm font-medium mb-2">Catégorie</label>
+            <select
+              value={filtreCategorie || ""}
+              onChange={(e) => setFiltreCategorie(e.target.value || null)}
+              className="w-full rounded bg-gray-800 p-3"
+            >
+              <option value="">Toutes les catégories</option>
+              {CATEGORIES_TRANSPORT.map((categorie) => (
+                <option key={categorie} value={categorie}>{categorie}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Date début</label>
+            <input
+              type="date"
+              value={filtreDateDebut || ""}
+              onChange={(e) => setFiltreDateDebut(e.target.value || null)}
+              className="w-full rounded bg-gray-800 p-3"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Date fin</label>
+            <input
+              type="date"
+              value={filtreDateFin || ""}
+              onChange={(e) => setFiltreDateFin(e.target.value || null)}
+              className="w-full rounded bg-gray-800 p-3"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={appliquerFiltres}
+              className="rounded bg-blue-600 px-4 py-3 hover:bg-blue-700 flex-1"
+            >
+              Appliquer
+            </button>
+            <button
+              onClick={reinitialiserFiltres}
+              className="rounded bg-gray-600 px-4 py-3 hover:bg-gray-700 flex-1"
+            >
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+
+        {/* Affichage du total filtré */}
+        {totalFiltre > 0 && (
+          <div className="mt-4 p-4 rounded-lg bg-gray-800">
+            <p className="text-xl font-bold text-green-400">
+              Total filtré: {formatMontant(totalFiltre)}
+            </p>
+          </div>
+        )}
+      </div>
+
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
         {loading ? (
           <div className="text-center py-8">
@@ -201,7 +315,7 @@ export default function DepensesPage() {
                       Supprimer
                     </button>
                     <a
-                      href={`/depenses/nouveau?id=${depense.id}`}
+                      href={`/depenses/modifier/${depense.id}`}
                       className="rounded bg-blue-600 px-3 py-1 text-sm hover:bg-blue-700"
                     >
                       Modifier

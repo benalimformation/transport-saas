@@ -208,13 +208,20 @@ function ModifierDepenseContent({ params }: { params: { id: string } }) {
 
         <div className="mb-6">
           <label className="block text-sm font-medium mb-2">Catégorie</label>
-          <input
-            type="text"
-            placeholder="Ex: Carburant, Entretien, Péage"
+          <select
             value={categorie}
             onChange={(e) => setCategorie(e.target.value)}
             className="w-full rounded bg-gray-800 p-4"
-          />
+            required
+          >
+            <option value="">Sélectionnez une catégorie</option>
+            {[
+              "Carburant", "Péages", "Entretien", "Réparations", "Assurance",
+              "Parking", "Lavage", "Pneus", "Administratif", "Autre"
+            ].map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
         </div>
 
         <div className="mb-8">
