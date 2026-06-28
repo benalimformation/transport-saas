@@ -33,18 +33,44 @@ export default function ModifierLivraisonPage() {
 
   useEffect(() => {
     async function chargerDonnees() {
+      // Vérifier la session utilisateur
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+
+      if (!userId) {
+        window.location.href = "/login";
+        return;
+      }
+
+      // Récupérer l'entreprise_id depuis profils
+      const { data: profil, error: profilError } = await supabase
+        .from("profils")
+        .select("entreprise_id")
+        .eq("id", userId)
+        .single();
+
+      if (profilError || !profil?.entreprise_id) {
+        alert("Entreprise introuvable pour cet utilisateur.");
+        return;
+      }
+
+      const entrepriseId = profil.entreprise_id;
+
       const { data: chauffeursData } = await supabase
         .from("Chauffeurs")
-        .select("id, nom");
+        .select("id, nom")
+        .eq("entreprise_id", entrepriseId);
 
       const { data: camionsData } = await supabase
         .from("camions")
-        .select("id, immatriculation");
+        .select("id, immatriculation")
+        .eq("entreprise_id", entrepriseId);
 
       const { data: livraisonData, error } = await supabase
         .from("livraisons")
         .select("*")
         .eq("id", id)
+        .eq("entreprise_id", entrepriseId)
         .single();
 
       if (error) {

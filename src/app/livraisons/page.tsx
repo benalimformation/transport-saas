@@ -102,37 +102,45 @@ export default function LivraisonsPage() {
     setCamions(camionsData || []);
   }
 
- async function supprimerLivraison(id: string) {
-  if (!confirm("Supprimer cette livraison ?")) return;
+  async function supprimerLivraison(id: string) {
+    if (!confirm("Supprimer cette livraison ?")) return;
 
-  const { error } = await supabase
-    .from("livraisons")
-    .delete()
-    .eq("id", id);
+    try {
+      const { error } = await supabase
+        .from("livraisons")
+        .delete()
+        .eq("id", id)
+        .eq("entreprise_id", entrepriseId);
 
-  if (error) {
-    alert("Erreur suppression : " + error.message);
-    return;
+      if (error) {
+        throw error;
+      }
+
+      setLivraisons((ancienneListe) =>
+        ancienneListe.filter((livraison) => livraison.id !== id)
+      );
+    } catch (err) {
+      alert("Erreur suppression : " + (err as Error).message);
+    }
   }
 
-  setLivraisons((ancienneListe) =>
-    ancienneListe.filter((livraison) => livraison.id !== id)
-  );
-}
-
   async function changerStatutLivraison(id: string, statut: string) {
-    const { error } = await supabase
-      .from("livraisons")
-      .update({ statut })
-      .eq("id", id);
+    try {
+      const { error } = await supabase
+        .from("livraisons")
+        .update({ statut })
+        .eq("id", id)
+        .eq("entreprise_id", entrepriseId);
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+      if (error) {
+        throw error;
+      }
 
-    if (entrepriseId) {
-      fetchData(entrepriseId);
+      if (entrepriseId) {
+        fetchData(entrepriseId);
+      }
+    } catch (err) {
+      alert("Erreur lors de la mise à jour: " + (err as Error).message);
     }
   }
 
