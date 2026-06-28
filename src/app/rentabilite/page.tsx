@@ -5,7 +5,9 @@ import { supabase } from "../../lib/supabase";
 
 export default function RentabilitePage() {
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
-  const [period, setPeriod] = useState<"month" | "quarter" | "year">("month");
+  const [period, setPeriod] = useState<"month" | "quarter" | "year" | "custom">("month");
+  const [customDateDebut, setCustomDateDebut] = useState<string | null>(null);
+  const [customDateFin, setCustomDateFin] = useState<string | null>(null);
   const [caTotal, setCaTotal] = useState(0);
   const [depensesTotal, setDepensesTotal] = useState(0);
   const [beneficeNet, setBeneficeNet] = useState(0);
@@ -24,7 +26,7 @@ export default function RentabilitePage() {
     if (entrepriseId) {
       chargerDonnees(entrepriseId, period);
     }
-  }, [entrepriseId, period]);
+  }, [entrepriseId, period, customDateDebut, customDateFin]);
 
   async function initialiserPage() {
     setLoading(true);
@@ -58,27 +60,44 @@ export default function RentabilitePage() {
     }
   }
 
-  async function chargerDonnees(idEntreprise: string, periode: "month" | "quarter" | "year") {
+  async function chargerDonnees(idEntreprise: string, periode: "month" | "quarter" | "year" | "custom") {
     setLoading(true);
     setError(null);
 
     try {
-      // Calculer la date de début selon la période
+      // Calculer les dates selon la période
       const now = new Date();
       let startDate: Date;
+      let endDate: Date | null = null;
 
-      switch (periode) {
-        case "month":
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-          break;
-        case "quarter":
-          startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-          break;
-        case "year":
-          startDate = new Date(now.getFullYear(), 0, 1);
-          break;
-        default:
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      // Si période personnalisée, utiliser les dates custom
+      if (periode === "custom" && customDateDebut) {
+        startDate = new Date(customDateDebut);
+        if (customDateFin) {
+          endDate = new Date(customDateFin);
+          // Ajouter 1 jour à la date de fin pour inclure toute la journée
+          endDate.setDate(endDate.getDate() + 1);
+        }
+      } else {
+        // Période automatique (mois, trimestre, année)
+        switch (periode) {
+          case "month":
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            break;
+          case "quarter":
+            const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+            startDate = new Date(now.getFullYear(), quarterStartMonth, 1);
+            endDate = new Date(now.getFullYear(), quarterStartMonth + 3, 1);
+            break;
+          case "year":
+            startDate = new Date(now.getFullYear(), 0, 1);
+            endDate = new Date(now.getFullYear() + 1, 0, 1);
+            break;
+          default:
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        }
       }
 
       // Récupérer le CA (factures payées)
@@ -87,7 +106,8 @@ export default function RentabilitePage() {
         .select("montant_ttc")
         .eq("entreprise_id", idEntreprise)
         .eq("statut", "Payée")
-        .gte("created_at", startDate.toISOString());
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate?.toISOString() || new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString());
 
       if (facturesError) throw facturesError;
 
@@ -96,7 +116,8 @@ export default function RentabilitePage() {
         .from("depenses")
         .select("montant")
         .eq("entreprise_id", idEntreprise)
-        .gte("date_depense", startDate.toISOString());
+        .gte("date_depense", startDate.toISOString())
+        .lte("date_depense", endDate?.toISOString() || new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString());
 
       if (depensesError) throw depensesError;
 
@@ -106,7 +127,8 @@ export default function RentabilitePage() {
         .select("*", { count: "exact", head: true })
         .eq("entreprise_id", idEntreprise)
         .eq("statut", "Payée")
-        .gte("created_at", startDate.toISOString());
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate?.toISOString() || new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString());
 
       if (facturesCountError) throw facturesCountError;
 
@@ -116,7 +138,8 @@ export default function RentabilitePage() {
         .select("*", { count: "exact", head: true })
         .eq("entreprise_id", idEntreprise)
         .eq("statut", "Livrée")
-        .gte("created_at", startDate.toISOString());
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate?.toISOString() || new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString());
 
       if (livraisonsCountError) throw livraisonsCountError;
 
@@ -143,6 +166,12 @@ export default function RentabilitePage() {
     }
   }
 
+  function setCustomPeriod() {
+    if (customDateDebut) {
+      setPeriod("custom");
+    }
+  }
+
   function formatPrix(montant: number) {
     return `${montant.toFixed(2)} €`;
   }
@@ -157,8 +186,24 @@ export default function RentabilitePage() {
       case "month": return `Mois en cours (${now.toLocaleString('fr-FR', { month: 'long', year: 'numeric' })})`;
       case "quarter": return `Trimestre en cours (Q${Math.floor(now.getMonth() / 3) + 1} ${now.getFullYear()})`;
       case "year": return `Année en cours (${now.getFullYear()})`;
+      case "custom":
+        if (customDateDebut && customDateFin) {
+          const start = new Date(customDateDebut);
+          const end = new Date(customDateFin);
+          return `Période personnalisée (${start.toLocaleDateString('fr-FR')} - ${end.toLocaleDateString('fr-FR')})`;
+        } else if (customDateDebut) {
+          return `À partir du ${new Date(customDateDebut).toLocaleDateString('fr-FR')}`;
+        } else {
+          return "Période personnalisée";
+        }
       default: return "Période actuelle";
     }
+  }
+
+  function reinitialiserFiltres() {
+    setPeriod("month");
+    setCustomDateDebut(null);
+    setCustomDateFin(null);
   }
 
   if (loading && !entrepriseId) {
@@ -202,7 +247,46 @@ export default function RentabilitePage() {
         </a>
       </div>
 
-      <div className="mb-8">
+      {/* Section des filtres de période */}
+      <div className="mb-8 rounded-xl border border-gray-800 bg-gray-900 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end mb-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Date début</label>
+            <input
+              type="date"
+              value={customDateDebut || ""}
+              onChange={(e) => setCustomDateDebut(e.target.value || null)}
+              className="w-full rounded bg-gray-800 p-3"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Date fin</label>
+            <input
+              type="date"
+              value={customDateFin || ""}
+              onChange={(e) => setCustomDateFin(e.target.value || null)}
+              className="w-full rounded bg-gray-800 p-3"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={setCustomPeriod}
+              className="rounded bg-blue-600 px-4 py-3 hover:bg-blue-700 flex-1"
+              disabled={!customDateDebut}
+            >
+              Appliquer
+            </button>
+            <button
+              onClick={reinitialiserFiltres}
+              className="rounded bg-gray-600 px-4 py-3 hover:bg-gray-700 flex-1"
+            >
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl text-gray-400">Période: {getPeriodLabel()}</h2>
           <div className="flex gap-2">

@@ -83,9 +83,11 @@
 ### Rentabilité
 
 * [x] Module fonctionnel.
-* [ ] Ajouter filtres personnalisés.
+* [x] Ajouter filtres personnalisés.
+* [x] Vérifier responsive.
 * [ ] Ajouter graphiques avancés.
-* [ ] Vérifier responsive.
+* [ ] Ajouter export des données.
+* [ ] Ajouter comparatifs périodiques.
 
 ---
 

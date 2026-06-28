@@ -52,6 +52,20 @@ Actions réalisées le 28/06/2026 :
 * Fonctionnalité de suppression des dépenses
 * Navigation vers la modification des dépenses
 
+### Amélioration du module Rentabilité
+
+Actions réalisées le 28/06/2026 :
+
+* Ajout de filtres de période personnalisés dans `src/app/rentabilite/page.tsx`
+* Implémentation de sélecteurs de date début et fin
+* Ajout de boutons pour appliquer et réinitialiser les filtres personnalisés
+* Conservation des boutons de période rapide (mois, trimestre, année)
+* Modification des requêtes Supabase pour utiliser les dates personnalisées avec filtres `.gte()` et `.lte()`
+* Maintien du filtre `.eq("entreprise_id", idEntreprise)` sur toutes les requêtes pour garantir le multi-tenant
+* Affichage dynamique du label de période selon les filtres actifs
+* Interface responsive avec grille adaptative pour les filtres
+* Recalcul automatique de tous les indicateurs (CA, dépenses, bénéfice, marge, etc.) selon la période sélectionnée
+
 ### Prochaine tâche recommandée
 
 Analyser l'ensemble du projet afin d'identifier les améliorations prioritaires du MVP.
