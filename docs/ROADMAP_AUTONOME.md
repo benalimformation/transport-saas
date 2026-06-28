@@ -60,8 +60,15 @@
 ### Dépenses
 
 * [x] Module existant.
+* [x] Page principale fonctionnelle (CRUD basique).
+* [x] Vérification session utilisateur.
+* [x] Filtrage par entreprise_id.
+* [x] Loaders et états vides.
+* [x] Gestion des erreurs.
 * [ ] Vérifier catégories.
 * [ ] Vérifier filtres.
+* [ ] Améliorer formulaire de création.
+* [ ] Ajouter pages de détail et modification.
 
 ### Planning
 

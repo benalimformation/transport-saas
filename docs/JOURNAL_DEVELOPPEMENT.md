@@ -34,6 +34,24 @@ Actions réalisées :
 * Graphiques simples fonctionnels.
 * Navigation OK.
 
+### Amélioration du module Dépenses
+
+Actions réalisées le 28/06/2026 :
+
+* Refonte complète de la page principale des dépenses (`src/app/depenses/page.tsx`)
+* Implémentation du pattern CRUD similaire au module Clients
+* Ajout de la vérification de session utilisateur
+* Récupération de l'entreprise_id depuis la table profils
+* Chargement des dépenses depuis Supabase avec filtre entreprise_id obligatoire
+* Affichage des dépenses avec date, catégorie, description et montant
+* Ajout des loaders pendant les requêtes
+* Ajout des états vides quand aucune dépense n'existe
+* Ajout des messages d'erreur utilisateur
+* Ajout du bouton de création vers `/depenses/nouveau`
+* Ajout du bouton de retour vers le dashboard
+* Fonctionnalité de suppression des dépenses
+* Navigation vers la modification des dépenses
+
 ### Prochaine tâche recommandée
 
 Analyser l'ensemble du projet afin d'identifier les améliorations prioritaires du MVP.
