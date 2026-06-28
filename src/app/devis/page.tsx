@@ -69,15 +69,22 @@ export default function DevisPage() {
   async function supprimerDevis(id: string) {
     if (!confirm("Supprimer ce devis ?")) return;
 
-    const { error } = await supabase.from("devis").delete().eq("id", id);
+    try {
+      const { error } = await supabase
+        .from("devis")
+        .delete()
+        .eq("id", id)
+        .eq("entreprise_id", entrepriseId);
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+      if (error) {
+        throw error;
+      }
 
-    if (entrepriseId) {
-      chargerDevis(entrepriseId);
+      if (entrepriseId) {
+        chargerDevis(entrepriseId);
+      }
+    } catch (err) {
+      alert("Erreur lors de la suppression: " + (err as Error).message);
     }
   }
 

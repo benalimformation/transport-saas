@@ -16,6 +16,7 @@ export default function ModifierDevisPage() {
   const [palettes, setPalettes] = useState("");
   const [dateTransport, setDateTransport] = useState("");
   const [statut, setStatut] = useState("Brouillon");
+  const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
 
   const [prixHT, setPrixHT] = useState(0);
   const [tva, setTVA] = useState(0);
@@ -25,15 +26,40 @@ export default function ModifierDevisPage() {
 
   useEffect(() => {
     if (id) {
-      chargerDevis();
+      initialiserPage();
     }
   }, [id]);
+
+  async function initialiserPage() {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user.id;
+
+    if (!userId) {
+      window.location.href = "/login";
+      return;
+    }
+
+    const { data: profil, error: profilError } = await supabase
+      .from("profils")
+      .select("entreprise_id")
+      .eq("id", userId)
+      .single();
+
+    if (profilError || !profil?.entreprise_id) {
+      alert("Entreprise introuvable pour cet utilisateur.");
+      return;
+    }
+
+    setEntrepriseId(profil.entreprise_id);
+    await chargerDevis();
+  }
 
   async function chargerDevis() {
     const { data, error } = await supabase
       .from("devis")
       .select("*")
       .eq("id", id)
+      .eq("entreprise_id", entrepriseId)
       .single();
 
     if (error || !data) {
