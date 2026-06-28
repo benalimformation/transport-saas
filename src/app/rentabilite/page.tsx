@@ -246,7 +246,7 @@ export default function RentabilitePage() {
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
               <p className="text-gray-400">Dépenses Totales</p>
               <h2 className="text-3xl font-bold text-red-400 mt-2">
-                {formatPrix(depensesTotal)}
+                {depensesTotal > 0 ? formatPrix(depensesTotal) : "Aucune dépense enregistrée"}
               </h2>
             </div>
 
@@ -260,7 +260,38 @@ export default function RentabilitePage() {
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
               <p className="text-gray-400">Marge</p>
               <h2 className="text-3xl font-bold text-blue-400 mt-2">
-                {formatPourcentage(marge)}
+                {caTotal > 0 ? formatPourcentage(marge) : "N/A"}
+              </h2>
+            </div>
+          </div>
+
+          {/* Nouvelle ligne pour les indicateurs supplémentaires */}
+          <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+              <p className="text-gray-400">Factures Payées</p>
+              <h2 className="text-3xl font-bold text-purple-400 mt-2">
+                {facturesPayees}
+              </h2>
+            </div>
+
+            <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+              <p className="text-gray-400">Livraisons Réalisées</p>
+              <h2 className="text-3xl font-bold text-yellow-400 mt-2">
+                {livraisonsRealisees}
+              </h2>
+            </div>
+
+            <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+              <p className="text-gray-400">Panier Moyen</p>
+              <h2 className="text-3xl font-bold text-cyan-400 mt-2">
+                {facturesPayees > 0 ? formatPrix(caTotal / facturesPayees) : "N/A"}
+              </h2>
+            </div>
+
+            <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+              <p className="text-gray-400">Taux de Rentabilité</p>
+              <h2 className="text-3xl font-bold text-indigo-400 mt-2">
+                {caTotal > 0 ? formatPourcentage((beneficeNet / caTotal) * 100) : "N/A"}
               </h2>
             </div>
           </div>
