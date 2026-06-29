@@ -78,6 +78,11 @@ export default function UtilisateursPage() {
   }
 
   async function changerRole(id: string, role: string) {
+    if (!entrepriseId) {
+      setError("ID d'entreprise manquant pour la mise à jour.");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("profils")

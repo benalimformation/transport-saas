@@ -15,6 +15,8 @@ type Camion = {
 export default function CamionsPage() {
   const [camions, setCamions] = useState<Camion[]>([]);
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     initialiserPage();
@@ -45,31 +47,46 @@ export default function CamionsPage() {
   }
 
   async function fetchCamions(idEntreprise: string) {
-    const { data, error } = await supabase
-      .from("camions")
-      .select("*")
-      .eq("entreprise_id", idEntreprise)
-      .order("created_at", { ascending: false });
+    setLoading(true);
+    setError(null);
 
-    if (error) {
-      alert(error.message);
-      return;
+    try {
+      const { data, error } = await supabase
+        .from("camions")
+        .select("*")
+        .eq("entreprise_id", idEntreprise)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setCamions(data || []);
+    } catch (err) {
+      setError("Erreur lors du chargement des camions: " + (err as Error).message);
+    } finally {
+      setLoading(false);
     }
-
-    setCamions(data || []);
   }
 
   async function supprimerCamion(id: string) {
     if (!confirm("Supprimer ce camion ?")) return;
 
-    const { error } = await supabase.from("camions").delete().eq("id", id);
+    try {
+      const { error } = await supabase
+        .from("camions")
+        .delete()
+        .eq("id", id)
+        .eq("entreprise_id", entrepriseId);
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (error) {
+        throw error;
+      }
+
+      if (entrepriseId) fetchCamions(entrepriseId);
+    } catch (err) {
+      setError("Erreur lors de la suppression: " + (err as Error).message);
     }
-
-    if (entrepriseId) fetchCamions(entrepriseId);
   }
 
   return (
