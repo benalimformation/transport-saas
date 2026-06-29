@@ -14,61 +14,78 @@ observation: string | null;
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchClients();
   }, []);
 
   async function fetchClients() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const userId = sessionData.session?.user.id;
+    setLoading(true);
+    setError(null);
 
-  if (!userId) {
-    window.location.href = "/login";
-    return;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+
+      if (!userId) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const { data: profil, error: profilError } = await supabase
+        .from("profils")
+        .select("entreprise_id")
+        .eq("id", userId)
+        .single();
+
+      if (profilError || !profil?.entreprise_id) {
+        setError("Entreprise introuvable pour cet utilisateur.");
+        return;
+      }
+
+      setEntrepriseId(profil.entreprise_id);
+
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("entreprise_id", profil.entreprise_id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setClients(data || []);
+    } catch (err) {
+      setError("Erreur lors du chargement des clients: " + (err as Error).message);
+    } finally {
+      setLoading(false);
+    }
   }
-
-  const { data: profil, error: profilError } = await supabase
-    .from("profils")
-    .select("entreprise_id")
-    .eq("id", userId)
-    .single();
-
-  if (profilError || !profil?.entreprise_id) {
-    alert("Entreprise introuvable");
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from("clients")
-    .select("*")
-    .eq("entreprise_id", profil.entreprise_id)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  setClients(data || []);
-}
 
   async function supprimerClient(id: string) {
     const confirmation = confirm("Supprimer ce client ?");
 
     if (!confirmation) return;
 
-    const { error } = await supabase
-      .from("clients")
-      .delete()
-      .eq("id", id);
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .delete()
+        .eq("id", id)
+        .eq("entreprise_id", entrepriseId);
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (error) {
+        throw error;
+      }
+
+      fetchClients();
+    } catch (err) {
+      setError("Erreur lors de la suppression: " + (err as Error).message);
     }
-
-    fetchClients();
   }
 
   return (
