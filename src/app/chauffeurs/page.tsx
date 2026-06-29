@@ -15,6 +15,8 @@ type Chauffeur = {
 export default function ChauffeursPage() {
   const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([]);
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     initialiserPage();
@@ -45,32 +47,47 @@ export default function ChauffeursPage() {
   }
 
   async function fetchChauffeurs(idEntreprise: string) {
-    const { data, error } = await supabase
-      .from("Chauffeurs")
-      .select("*")
-      .eq("entreprise_id", idEntreprise)
-      .order("nom", { ascending: true });
+    setLoading(true);
+    setError(null);
 
-    if (error) {
-      alert(error.message);
-      return;
+    try {
+      const { data, error } = await supabase
+        .from("Chauffeurs")
+        .select("*")
+        .eq("entreprise_id", idEntreprise)
+        .order("nom", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      setChauffeurs(data || []);
+    } catch (err) {
+      setError("Erreur lors du chargement des chauffeurs: " + (err as Error).message);
+    } finally {
+      setLoading(false);
     }
-
-    setChauffeurs(data || []);
   }
 
   async function supprimerChauffeur(id: string) {
     if (!confirm("Supprimer ce chauffeur ?")) return;
 
-    const { error } = await supabase.from("Chauffeurs").delete().eq("id", id);
+    try {
+      const { error } = await supabase
+        .from("Chauffeurs")
+        .delete()
+        .eq("id", id)
+        .eq("entreprise_id", entrepriseId);
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+      if (error) {
+        throw error;
+      }
 
-    if (entrepriseId) {
-      fetchChauffeurs(entrepriseId);
+      if (entrepriseId) {
+        fetchChauffeurs(entrepriseId);
+      }
+    } catch (err) {
+      setError("Erreur lors de la suppression: " + (err as Error).message);
     }
   }
 

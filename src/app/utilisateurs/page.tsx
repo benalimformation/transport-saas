@@ -13,37 +13,88 @@ type Profil = {
 
 export default function UtilisateursPage() {
   const [profils, setProfils] = useState<Profil[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
 
   useEffect(() => {
-    chargerProfils();
+    initialiserPage();
   }, []);
 
-  async function chargerProfils() {
-    const { data, error } = await supabase
-      .from("profils")
-      .select("*")
-      .order("created_at", { ascending: false });
+  async function initialiserPage() {
+    setLoading(true);
+    setError(null);
 
-    if (error) {
-      alert(error.message);
-      return;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+
+      if (!userId) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const { data: profil, error: profilError } = await supabase
+        .from("profils")
+        .select("entreprise_id")
+        .eq("id", userId)
+        .single();
+
+      if (profilError || !profil?.entreprise_id) {
+        setError("Entreprise introuvable pour cet utilisateur.");
+        return;
+      }
+
+      setEntrepriseId(profil.entreprise_id);
+      await chargerProfils(profil.entreprise_id);
+    } catch (err) {
+      setError("Erreur lors de l'initialisation: " + (err as Error).message);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    setProfils(data || []);
+  async function chargerProfils(idEntreprise: string) {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from("profils")
+        .select("*")
+        .eq("entreprise_id", idEntreprise)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setProfils(data || []);
+    } catch (err) {
+      setError("Erreur lors du chargement des utilisateurs: " + (err as Error).message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function changerRole(id: string, role: string) {
-    const { error } = await supabase
-      .from("profils")
-      .update({ role })
-      .eq("id", id);
+    try {
+      const { error } = await supabase
+        .from("profils")
+        .update({ role })
+        .eq("id", id)
+        .eq("entreprise_id", entrepriseId);
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (error) {
+        throw error;
+      }
+
+      if (entrepriseId) {
+        await chargerProfils(entrepriseId);
+      }
+    } catch (err) {
+      setError("Erreur lors de la mise à jour: " + (err as Error).message);
     }
-
-    chargerProfils();
   }
 
   function formatDate(date: string | null) {
