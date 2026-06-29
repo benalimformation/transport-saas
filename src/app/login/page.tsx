@@ -32,7 +32,43 @@ export default function LoginPage() {
       return;
     }
 
-    window.location.href = "/dashboard";
+    try {
+      // Récupérer l'utilisateur connecté
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("Utilisateur non trouvé après connexion");
+      }
+
+      // Récupérer le profil de l'utilisateur dans la table profils
+      const { data: profil, error: profilError } = await supabase
+        .from('profils')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profilError && profilError.code !== 'PGRST116') {
+        // Erreur autre que "aucun résultat trouvé"
+        throw new Error(`Erreur lors de la récupération du profil: ${profilError.message}`);
+      }
+
+      if (!profil) {
+        // Aucun profil trouvé
+        throw new Error("Aucun profil utilisateur trouvé. Veuillez contacter l'administrateur.");
+      }
+
+      // Redirection selon le rôle
+      if (profil.role === "super_admin") {
+        window.location.href = "/admin";
+      } else {
+        window.location.href = "/dashboard";
+      }
+
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Une erreur est survenue lors de la connexion');
+      // Déconnexion en cas d'erreur
+      await supabase.auth.signOut();
+    }
   }
 
   return (
