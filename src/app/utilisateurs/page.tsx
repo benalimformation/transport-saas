@@ -36,12 +36,27 @@ export default function UtilisateursPage() {
 
       const { data: profil, error: profilError } = await supabase
         .from("profils")
-        .select("entreprise_id")
+        .select("entreprise_id, role")
         .eq("id", userId)
         .single();
 
+      if (profilError || !profil) {
+        setError("Profil utilisateur introuvable.");
+        return;
+      }
+
       if (profilError || !profil?.entreprise_id) {
         setError("Entreprise introuvable pour cet utilisateur.");
+        return;
+      }
+
+      // Vérifier que l'utilisateur a les droits nécessaires
+      const authorizedRoles = ["super_admin", "admin"];
+      if (!authorizedRoles.includes(profil.role)) {
+        setError("Accès refusé. Vous n'avez pas les droits nécessaires pour gérer les utilisateurs.");
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 3000);
         return;
       }
 
