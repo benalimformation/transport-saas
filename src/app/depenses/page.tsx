@@ -54,15 +54,30 @@ export default function DepensesPage() {
         return;
       }
 
-      // Récupérer l'entreprise_id depuis profils
+      // Récupérer l'entreprise_id et le rôle depuis profils
       const { data: profil, error: profilError } = await supabase
         .from("profils")
-        .select("entreprise_id")
+        .select("entreprise_id, role")
         .eq("id", userId)
         .single();
 
+      if (profilError || !profil) {
+        setError("Profil utilisateur introuvable.");
+        return;
+      }
+
       if (profilError || !profil?.entreprise_id) {
         setError("Entreprise introuvable pour cet utilisateur.");
+        return;
+      }
+
+      // Vérifier que l'utilisateur a les droits nécessaires
+      const authorizedRoles = ["super_admin", "admin", "exploitant"];
+      if (!authorizedRoles.includes(profil.role)) {
+        setError("Accès refusé. Vous n'avez pas les droits nécessaires pour consulter cette page.");
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 3000);
         return;
       }
 
