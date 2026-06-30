@@ -26,6 +26,16 @@ export default function AdminPage() {
   })
   const router = useRouter()
 
+  async function handleLogout() {
+    try {
+      await supabase.auth.signOut();
+      window.location.href = "/login";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la déconnexion');
+      console.error('Logout error:', err);
+    }
+  }
+
   useEffect(() => {
     async function checkAuthAndLoadData() {
       try {
@@ -70,7 +80,7 @@ export default function AdminPage() {
       }
     }
 
-    async function loadAdminData() {
+  async function loadAdminData() {
       try {
         // Charger tous les profils
         const { data: allProfils, error } = await supabase
@@ -145,7 +155,15 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Administration SaaS</h1>
+        <div className="mb-8 flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Administration SaaS</h1>
+          <button
+            onClick={handleLogout}
+            className="rounded bg-red-600 px-4 py-2 hover:bg-red-700 text-white"
+          >
+            Déconnexion
+          </button>
+        </div>
 
         {/* Statistiques */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
