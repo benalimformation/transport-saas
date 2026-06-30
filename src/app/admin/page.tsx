@@ -55,6 +55,8 @@ export default function AdminPage() {
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showEditRole, setShowEditRole] = useState<string | null>(null)
+  const [editModalUser, setEditModalUser] = useState<Profil | null>(null)
+  const [editModalRole, setEditModalRole] = useState<string>("")
   const [toasts, setToasts] = useState<Toast[]>([])
   const [activeTab, setActiveTab] = useState<'users' | 'companies' | 'audit'>('users')
   const router = useRouter()
@@ -284,15 +286,14 @@ export default function AdminPage() {
         nom: profil.nom || 'N/A',
         email: profil.email || 'N/A',
         role: profil.role || 'N/A',
-        statut: 'Actif',
         entreprise_id: profil.entreprise_id || 'N/A',
         created_at: profil.created_at ? new Date(profil.created_at).toISOString() : 'N/A'
       }))
 
       // Créer le contenu CSV
-      const headers = 'Nom,Email,Rôle,Statut,Entreprise ID,Créé le'
+      const headers = 'Nom,Email,Rôle,Entreprise ID,Créé le'
       const rows = csvData.map(row =>
-        `${row.nom},${row.email},${row.role},${row.statut},${row.entreprise_id},${row.created_at}`
+        `${row.nom},${row.email},${row.role},${row.entreprise_id},${row.created_at}`
       ).join('\n')
 
       const csvContent = `${headers}\n${rows}`
@@ -665,7 +666,6 @@ export default function AdminPage() {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Nom</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Rôle</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Statut</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Entreprise ID</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Créé le</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
@@ -680,7 +680,7 @@ export default function AdminPage() {
                     return (
                       <tr
                         key={profil.id}
-                        className={`${isCurrentUser ? "bg-gray-800" : showEditRole === profil.id ? "bg-blue-900/30 border-l-4 border-blue-500" : "bg-gray-900"} hover:bg-gray-800 transition-colors duration-150 ease-in-out`}
+                        className={`${isCurrentUser ? "bg-gray-800" : "bg-gray-900"} hover:bg-gray-800 transition-colors duration-150 ease-in-out`}
                       >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{profil.nom || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{profil.email || 'N/A'}</td>
@@ -689,24 +689,6 @@ export default function AdminPage() {
                             <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-900 text-purple-300">
                               {profil.role || 'N/A'} <span className="ml-1">(Vous)</span>
                             </span>
-                          ) : showEditRole === profil.id ? (
-                            // Mode édition : afficher le sélecteur de rôle
-                            <select
-                              value={profil.role || ''}
-                              onChange={(e) => {
-                                // Mettre à jour localement pour prévisualisation
-                                setProfils(prev => prev.map(p =>
-                                  p.id === profil.id ? {...p, role: e.target.value} : p
-                                ))
-                              }}
-                              className="px-3 py-1 text-xs bg-gray-800 border border-gray-600 rounded-full text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            >
-                              <option value="super_admin">Super Admin</option>
-                              <option value="admin">Admin</option>
-                              <option value="exploitant">Exploitant</option>
-                              <option value="chauffeur">Chauffeur</option>
-                              <option value="client">Client</option>
-                            </select>
                           ) : (
                             <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                               profil.role === 'super_admin' ? 'bg-purple-900 text-purple-300' :
@@ -719,18 +701,6 @@ export default function AdminPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                          {showEditRole === profil.id ? (
-                            // En mode édition, afficher un badge statut simple non modifiable
-                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-900 text-green-300">
-                              Actif
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-900 text-green-300">
-                              Actif
-                            </span>
-                          )}
-                        </td>
                         <td className="px-6 py-4 text-sm text-gray-300">{profil.entreprise_id || 'N/A'}</td>
                         <td className="px-6 py-4 text-sm text-gray-400">
                           {profil.created_at ? new Date(profil.created_at).toLocaleString() : 'N/A'}
@@ -740,82 +710,26 @@ export default function AdminPage() {
                             <span className="text-gray-500 italic">Actions désactivées</span>
                           ) : (
                             <div className="flex space-x-2">
-                              {/* Boutons d'action */}
-                              {showEditRole === profil.id ? (
-                                <>
-                                  {/* Bouton Enregistrer */}
-                                  <button
-                                    onClick={async () => {
-                                      const currentProfil = profils.find(p => p.id === profil.id)
-                                      if (currentProfil) {
-                                        try {
-                                          // Vérifier si on essaie de promouvoir en super_admin
-                                          if (currentProfil.role === "super_admin" && profil.id !== currentUserId) {
-                                            const confirmPromotion = window.confirm("Confirmer la promotion en super_admin ?")
-                                            if (!confirmPromotion) return
-                                          }
+                              {/* Bouton Modifier */}
+                              <button
+                                onClick={() => {
+                                  setEditModalUser(profil);
+                                  setEditModalRole(profil.role || "");
+                                }}
+                                className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+                              >
+                                Modifier
+                              </button>
 
-                                          // Vérifier si c'est son propre rôle
-                                          if (profil.id === currentUserId) {
-                                            addToast("Vous ne pouvez pas modifier votre propre rôle pour des raisons de sécurité.", 'error')
-                                            return
-                                          }
-
-                                          const { error } = await supabase
-                                            .from('profils')
-                                            .update({ role: currentProfil.role })
-                                            .eq('id', profil.id)
-
-                                          if (error) {
-                                            throw new Error(`Erreur lors de la mise à jour: ${error.message}`)
-                                          }
-
-                                          addToast(`Rôle mis à jour avec succès`, 'success')
-                                          setShowEditRole(null)
-                                          await loadAdminData()
-                                        } catch (err) {
-                                          addToast(err instanceof Error ? err.message : 'Erreur lors de la mise à jour', 'error')
-                                        }
-                                      }
-                                    }}
-                                    className="px-3 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
-                                  >
-                                    Enregistrer
-                                  </button>
-
-                                  {/* Bouton Annuler */}
-                                  <button
-                                    onClick={() => {
-                                      setShowEditRole(null)
-                                      // Recharger les données pour annuler les modifications locales
-                                      loadAdminData()
-                                    }}
-                                    className="px-3 py-1 text-xs font-medium text-white bg-gray-600 rounded hover:bg-gray-500 transition-colors"
-                                  >
-                                    Annuler
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  {/* Bouton Modifier */}
-                                  <button
-                                    onClick={() => setShowEditRole(profil.id)}
-                                    className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
-                                  >
-                                    Modifier
-                                  </button>
-
-                                  {/* Bouton Supprimer avec protections */}
-                                  <button
-                                    onClick={() => canDelete && setShowDeleteConfirm(profil.id)}
-                                    disabled={!canDelete}
-                                    className={`px-3 py-1 text-xs font-medium text-white rounded transition-colors ${canDelete ? 'bg-red-600 hover:bg-red-700' : 'bg-red-900 cursor-not-allowed opacity-50'}`}
-                                    title={!canDelete ? (isSuperAdmin ? "Suppression d'un super administrateur interdite" : "Vous ne pouvez pas supprimer votre propre compte") : ""}
-                                  >
-                                    Supprimer
-                                  </button>
-                                </>
-                              )}
+                              {/* Bouton Supprimer avec protections */}
+                              <button
+                                onClick={() => canDelete && setShowDeleteConfirm(profil.id)}
+                                disabled={!canDelete}
+                                className={`px-3 py-1 text-xs font-medium text-white rounded transition-colors ${canDelete ? 'bg-red-600 hover:bg-red-700' : 'bg-red-900 cursor-not-allowed opacity-50'}`}
+                                title={!canDelete ? (isSuperAdmin ? "Suppression d'un super administrateur interdite" : "Vous ne pouvez pas supprimer votre propre compte") : ""}
+                              >
+                                Supprimer
+                              </button>
 
                               {/* Confirmation de suppression */}
                               {showDeleteConfirm === profil.id && (
@@ -854,6 +768,97 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+
+        {/* Modale de modification utilisateur */}
+        {editModalUser && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-medium text-white mb-4">Modifier utilisateur</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Nom</label>
+                  <input
+                    type="text"
+                    value={editModalUser.nom || ''}
+                    readOnly
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={editModalUser.email || ''}
+                    readOnly
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Rôle</label>
+                  <select
+                    value={editModalRole}
+                    onChange={(e) => setEditModalRole(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="exploitant">Exploitant</option>
+                    <option value="chauffeur">Chauffeur</option>
+                    <option value="client">Client</option>
+                    <option value="super_admin">Super Admin</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={async () => {
+                    try {
+                      // Vérifier si on essaie de modifier son propre rôle
+                      if (editModalUser.id === currentUserId) {
+                        addToast("Vous ne pouvez pas modifier votre propre rôle pour des raisons de sécurité.", 'error');
+                        return;
+                      }
+
+                      // Vérifier si on essaie de promouvoir en super_admin
+                      if (editModalRole === "super_admin" && editModalUser.id !== currentUserId) {
+                        const confirmPromotion = window.confirm("Confirmer la promotion en super_admin ?");
+                        if (!confirmPromotion) return;
+                      }
+
+                      const { error } = await supabase
+                        .from('profils')
+                        .update({ role: editModalRole })
+                        .eq('id', editModalUser.id);
+
+                      if (error) {
+                        throw new Error(`Erreur lors de la mise à jour: ${error.message}`);
+                      }
+
+                      addToast(`Rôle mis à jour avec succès`, 'success');
+                      setEditModalUser(null);
+                      await loadAdminData();
+                    } catch (err) {
+                      addToast(err instanceof Error ? err.message : 'Erreur lors de la mise à jour', 'error');
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                >
+                  Enregistrer
+                </button>
+
+                <button
+                  onClick={() => setEditModalUser(null)}
+                  className="flex-1 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
