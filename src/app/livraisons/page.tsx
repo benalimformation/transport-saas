@@ -52,12 +52,27 @@ export default function LivraisonsPage() {
 
     const { data: profil, error: profilError } = await supabase
       .from("profils")
-      .select("entreprise_id")
+      .select("entreprise_id, role")
       .eq("id", userId)
       .single();
 
+    if (profilError || !profil) {
+      alert("Profil utilisateur introuvable.");
+      return;
+    }
+
     if (profilError || !profil?.entreprise_id) {
       alert("Entreprise introuvable pour cet utilisateur.");
+      return;
+    }
+
+    // Vérifier que l'utilisateur a les droits nécessaires
+    const authorizedRoles = ["super_admin", "admin", "exploitant", "chauffeur"];
+    if (!authorizedRoles.includes(profil.role)) {
+      alert("Accès refusé. Vous n'avez pas les droits nécessaires pour consulter cette page.");
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 3000);
       return;
     }
 
