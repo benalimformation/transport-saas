@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { MODULE_PERMISSIONS, isAuthorized } from "../../lib/permissions";
 
 export default function RentabilitePage() {
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
@@ -58,8 +59,7 @@ export default function RentabilitePage() {
       }
 
       // Vérifier que l'utilisateur a les droits nécessaires
-      const authorizedRoles = ["super_admin", "admin", "exploitant"];
-      if (!authorizedRoles.includes(profil.role)) {
+      if (!isAuthorized(profil.role, "rentabilite")) {
         setError("Accès refusé. Vous n'avez pas les droits nécessaires pour consulter cette page.");
         setTimeout(() => {
           window.location.href = "/dashboard";
