@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const [livraisonsEnCours, setLivraisonsEnCours] = useState(0);
   const [totalDepenses, setTotalDepenses] = useState(0);
   const [benefice, setBenefice] = useState(0);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     initialiserDashboard();
@@ -41,7 +42,7 @@ export default function DashboardPage() {
 
     const { data: profil, error: profilError } = await supabase
       .from("profils")
-      .select("entreprise_id")
+      .select("entreprise_id, role")
       .eq("id", userId)
       .single();
 
@@ -50,6 +51,7 @@ export default function DashboardPage() {
       return;
     }
 
+    setUserRole(profil.role);
     await chargerKPI(profil.entreprise_id);
   }
 
@@ -130,6 +132,81 @@ export default function DashboardPage() {
     return `${montant.toFixed(2)} €`;
   }
 
+  // Définition des cartes avec leurs permissions par rôle
+  const dashboardCards = [
+    {
+      href: "/clients",
+      title: "Clients",
+      subtitle: "Gérer les clients",
+      allowedRoles: ["super_admin", "admin", "exploitant"]
+    },
+    {
+      href: "/devis",
+      title: "Devis",
+      subtitle: "Créer et suivre les devis",
+      allowedRoles: ["super_admin", "admin", "exploitant", "client"]
+    },
+    {
+      href: "/livraisons",
+      title: "Livraisons",
+      subtitle: "Suivre les livraisons",
+      allowedRoles: ["super_admin", "admin", "exploitant", "chauffeur"]
+    },
+    {
+      href: "/factures",
+      title: "Factures",
+      subtitle: "Suivre les paiements",
+      allowedRoles: ["super_admin", "admin", "exploitant", "client"]
+    },
+    {
+      href: "/depenses",
+      title: "Dépenses",
+      subtitle: "Suivre les coûts de transport",
+      allowedRoles: ["super_admin", "admin", "exploitant"]
+    },
+    {
+      href: "/chauffeurs",
+      title: "Chauffeurs",
+      subtitle: "Gérer les chauffeurs",
+      allowedRoles: ["super_admin", "admin", "exploitant", "chauffeur"]
+    },
+    {
+      href: "/camions",
+      title: "Camions",
+      subtitle: "Gérer les camions",
+      allowedRoles: ["super_admin", "admin", "exploitant", "chauffeur"]
+    },
+    {
+      href: "/planning",
+      title: "Planning",
+      subtitle: "Voir l'organisation",
+      allowedRoles: ["super_admin", "admin", "exploitant"]
+    },
+    {
+      href: "/rentabilite",
+      title: "Rentabilité",
+      subtitle: "Analyser la rentabilité",
+      allowedRoles: ["super_admin", "admin", "exploitant"]
+    },
+    {
+      href: "/utilisateurs",
+      title: "Utilisateurs",
+      subtitle: "Gérer les accès",
+      allowedRoles: ["super_admin", "admin"]
+    },
+    {
+      href: "/admin",
+      title: "Administration SaaS",
+      subtitle: "Gérer l'administration",
+      allowedRoles: ["super_admin"]
+    }
+  ];
+
+  // Filtrer les cartes autorisées pour le rôle utilisateur
+  const allowedCards = userRole
+    ? dashboardCards.filter(card => card.allowedRoles.includes(userRole))
+    : dashboardCards;
+
   return (
     <main className="min-h-screen bg-gray-950 p-10 text-white">
       <div className="mb-8 flex items-center justify-between">
@@ -195,55 +272,16 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <a href="/clients" className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800">
-          <h2 className="text-2xl font-bold">Clients</h2>
-          <p className="mt-2 text-gray-400">Gérer les clients</p>
-        </a>
-
-        <a href="/devis" className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800">
-          <h2 className="text-2xl font-bold">Devis</h2>
-          <p className="mt-2 text-gray-400">Créer et suivre les devis</p>
-        </a>
-
-        <a href="/livraisons" className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800">
-          <h2 className="text-2xl font-bold">Livraisons</h2>
-          <p className="mt-2 text-gray-400">Suivre les livraisons</p>
-        </a>
-
-        <a href="/factures" className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800">
-          <h2 className="text-2xl font-bold">Factures</h2>
-          <p className="mt-2 text-gray-400">Suivre les paiements</p>
-        </a>
-
-        <a href="/depenses" className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800">
-          <h2 className="text-2xl font-bold">Dépenses</h2>
-          <p className="mt-2 text-gray-400">Suivre les coûts de transport</p>
-        </a>
-
-        <a href="/chauffeurs" className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800">
-          <h2 className="text-2xl font-bold">Chauffeurs</h2>
-          <p className="mt-2 text-gray-400">Gérer les chauffeurs</p>
-        </a>
-
-        <a href="/camions" className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800">
-          <h2 className="text-2xl font-bold">Camions</h2>
-          <p className="mt-2 text-gray-400">Gérer les camions</p>
-        </a>
-
-        <a href="/planning" className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800">
-          <h2 className="text-2xl font-bold">Planning</h2>
-          <p className="mt-2 text-gray-400">Voir l'organisation</p>
-        </a>
-
-        <a href="/rentabilite" className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800">
-          <h2 className="text-2xl font-bold">Rentabilité</h2>
-          <p className="mt-2 text-gray-400">Analyser la rentabilité</p>
-        </a>
-
-        <a href="/utilisateurs" className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800">
-          <h2 className="text-2xl font-bold">Utilisateurs</h2>
-          <p className="mt-2 text-gray-400">Gérer les accès</p>
-        </a>
+        {allowedCards.map((card) => (
+          <a
+            key={card.href}
+            href={card.href}
+            className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800"
+          >
+            <h2 className="text-2xl font-bold">{card.title}</h2>
+            <p className="mt-2 text-gray-400">{card.subtitle}</p>
+          </a>
+        ))}
       </div>
     </main>
   );
