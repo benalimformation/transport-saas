@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { getDashboardCardsForRole, Role } from "../../lib/permissions";
 
 type Facture = {
   montant_ttc: number | null;
@@ -132,80 +133,8 @@ export default function DashboardPage() {
     return `${montant.toFixed(2)} €`;
   }
 
-  // Définition des cartes avec leurs permissions par rôle
-  const dashboardCards = [
-    {
-      href: "/clients",
-      title: "Clients",
-      subtitle: "Gérer les clients",
-      allowedRoles: ["super_admin", "admin", "exploitant"]
-    },
-    {
-      href: "/devis",
-      title: "Devis",
-      subtitle: "Créer et suivre les devis",
-      allowedRoles: ["super_admin", "admin", "exploitant", "client"]
-    },
-    {
-      href: "/livraisons",
-      title: "Livraisons",
-      subtitle: "Suivre les livraisons",
-      allowedRoles: ["super_admin", "admin", "exploitant", "chauffeur"]
-    },
-    {
-      href: "/factures",
-      title: "Factures",
-      subtitle: "Suivre les paiements",
-      allowedRoles: ["super_admin", "admin", "exploitant", "client"]
-    },
-    {
-      href: "/depenses",
-      title: "Dépenses",
-      subtitle: "Suivre les coûts de transport",
-      allowedRoles: ["super_admin", "admin", "exploitant"]
-    },
-    {
-      href: "/chauffeurs",
-      title: "Chauffeurs",
-      subtitle: "Gérer les chauffeurs",
-      allowedRoles: ["super_admin", "admin", "exploitant", "chauffeur"]
-    },
-    {
-      href: "/camions",
-      title: "Camions",
-      subtitle: "Gérer les camions",
-      allowedRoles: ["super_admin", "admin", "exploitant", "chauffeur"]
-    },
-    {
-      href: "/planning",
-      title: "Planning",
-      subtitle: "Voir l'organisation",
-      allowedRoles: ["super_admin", "admin", "exploitant"]
-    },
-    {
-      href: "/rentabilite",
-      title: "Rentabilité",
-      subtitle: "Analyser la rentabilité",
-      allowedRoles: ["super_admin", "admin", "exploitant"]
-    },
-    {
-      href: "/utilisateurs",
-      title: "Utilisateurs",
-      subtitle: "Gérer les accès",
-      allowedRoles: ["super_admin", "admin"]
-    },
-    {
-      href: "/admin",
-      title: "Administration SaaS",
-      subtitle: "Gérer l'administration",
-      allowedRoles: ["super_admin"]
-    }
-  ];
-
-  // Filtrer les cartes autorisées pour le rôle utilisateur
-  const allowedCards = userRole
-    ? dashboardCards.filter(card => card.allowedRoles.includes(userRole))
-    : dashboardCards;
+  // Utiliser la bibliothèque centralisée de permissions
+  const allowedCards = getDashboardCardsForRole(userRole as Role | null);
 
   return (
     <main className="min-h-screen bg-gray-950 p-10 text-white">
