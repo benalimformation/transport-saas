@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { MODULE_PERMISSIONS, isAuthorized } from "../../lib/permissions";
 
 type Chauffeur = {
   id: string;
@@ -48,8 +49,7 @@ export default function ChauffeursPage() {
     }
 
     // Vérifier que l'utilisateur a les droits nécessaires
-    const authorizedRoles = ["super_admin", "admin", "exploitant", "chauffeur"];
-    if (!authorizedRoles.includes(profil.role)) {
+    if (!isAuthorized(profil.role, "chauffeurs")) {
       alert("Accès refusé. Vous n'avez pas les droits nécessaires pour consulter cette page.");
       setTimeout(() => {
         window.location.href = "/dashboard";
