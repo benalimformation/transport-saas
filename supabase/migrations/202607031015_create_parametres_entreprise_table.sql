@@ -1,7 +1,7 @@
 -- Create parametres_entreprise table for company settings
 CREATE TABLE parametres_entreprise (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  entreprise_id UUID NOT NULL REFERENCES entreprises(id) ON DELETE CASCADE,
+  entreprise_id UUID NOT NULL,
   nom VARCHAR(255) NOT NULL,
   adresse TEXT,
   telephone VARCHAR(50),
@@ -42,6 +42,7 @@ EXECUTE FUNCTION update_updated_at();
 COMMENT ON TABLE parametres_entreprise IS 'Table de stockage des paramètres de l''entreprise pour la personnalisation des documents (devis, factures, CMR)';
 
 -- Comment on columns
+COMMENT ON COLUMN parametres_entreprise.entreprise_id IS 'ID de l''utilisateur admin qui représente l''entreprise (même schéma que profils.entreprise_id)';
 COMMENT ON COLUMN parametres_entreprise.nom IS 'Nom de l''entreprise';
 COMMENT ON COLUMN parametres_entreprise.adresse IS 'Adresse complète de l''entreprise';
 COMMENT ON COLUMN parametres_entreprise.telephone IS 'Numéro de téléphone de l''entreprise';
