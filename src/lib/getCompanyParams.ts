@@ -33,6 +33,7 @@ export async function getCompanyParams(entrepriseId: string) {
     bic: params.bic || "",
     conditions_paiement: params.conditions_paiement || "Paiement à 30 jours",
     tva_defaut: params.tva_defaut || 20,
+    prefixe_devis: params.prefixe_devis || "DEV-",
     prefixe_factures: params.prefixe_factures || "FACT-",
     mentions_legales: params.mentions_legales || "Document généré automatiquement par Transport SaaS",
     couleur_primaire: params.couleur_primaire || "#3b82f6",
