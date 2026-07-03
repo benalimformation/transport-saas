@@ -193,6 +193,7 @@ export default function DevisPage() {
     window.location.href = `/livraisons/modifier/${data.id}`;
   }
 
+
   function formatDate(date: string | null) {
     if (!date) return "Non renseignée";
     return new Date(date).toLocaleDateString("fr-FR");
@@ -333,6 +334,7 @@ export default function DevisPage() {
                   <p className="mt-2 text-xl font-bold text-green-400">
                     Prix TTC : {formatPrix(item.prix_ttc || item.prix)}
                   </p>
+
 
                   <button
                     onClick={() => supprimerDevis(item.id)}

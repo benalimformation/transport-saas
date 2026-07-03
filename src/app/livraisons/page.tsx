@@ -235,6 +235,33 @@ export default function LivraisonsPage() {
     }
   }
 
+  async function getFactureForLivraison(livraisonId: string): Promise<{ exists: boolean; factureId?: string; numero?: string }> {
+    if (!entrepriseId) return { exists: false };
+
+    try {
+      const { data, error } = await supabase
+        .from("factures")
+        .select("id, numero")
+        .eq("livraison_id", livraisonId)
+        .eq("entreprise_id", entrepriseId)
+        .single();
+
+      if (error || !data) {
+        return { exists: false };
+      }
+
+      return {
+        exists: true,
+        factureId: data.id,
+        numero: data.numero || `FAC-${data.id.slice(0, 8).toUpperCase()}`
+      };
+    } catch (err) {
+      console.error("Erreur vérification facture:", err);
+      return { exists: false };
+    }
+  }
+
+
   function nomChauffeur(id: string | null) {
     if (!id) return "Non affecté";
     return chauffeurs.find((chauffeur) => chauffeur.id === id)?.nom || "Non affecté";
@@ -279,8 +306,26 @@ export default function LivraisonsPage() {
                 {livraison.client || "Client non renseigné"}
               </p>
 
+              {/* Liens vers documents associés */}
+              <div className="mb-2 flex gap-3 text-sm">
+                {/* Lien vers facture si disponible */}
+                {livraison.statut === "Livrée" && (
+                  <button
+                    onClick={async () => {
+                      const result = await getFactureForLivraison(livraison.id);
+                      if (result.exists && result.factureId) {
+                        window.location.href = `/factures`;
+                      }
+                    }}
+                    className="text-green-400 hover:text-green-300"
+                  >
+                    💰 Facture
+                  </button>
+                )}
+              </div>
+
               <p>
-                Trajet : {livraison.adresse_depart || "Non renseigné"} →{" "}
+                Trajet : {livraison.adresse_depart || "Non renseigné"} →
                 {livraison.adresse_arrivee || "Non renseigné"}
               </p>
 

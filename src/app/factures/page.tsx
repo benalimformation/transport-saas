@@ -14,6 +14,7 @@ type Facture = {
   date_echeance: string | null;
   date_paiement: string | null;
   entreprise_id: string | null;
+  livraison_id: string | null;
 };
 
 export default function FacturesPage() {
@@ -190,6 +191,33 @@ export default function FacturesPage() {
     }
   }
 
+  async function getLivraisonForFacture(facture: Facture): Promise<{ exists: boolean; livraisonId?: string; numero?: string }> {
+    if (!entrepriseId || !facture.livraison_id) return { exists: false };
+
+    try {
+      const { data, error } = await supabase
+        .from("livraisons")
+        .select("id")
+        .eq("id", facture.livraison_id)
+        .eq("entreprise_id", entrepriseId)
+        .single();
+
+      if (error || !data) {
+        return { exists: false };
+      }
+
+      return {
+        exists: true,
+        livraisonId: data.id,
+        numero: `LIV-${data.id.slice(0, 8).toUpperCase()}`
+      };
+    } catch (err) {
+      console.error("Erreur vérification livraison:", err);
+      return { exists: false };
+    }
+  }
+
+
   function formatDate(date: string | null) {
     if (!date) return "Non renseignée";
     return new Date(date).toLocaleDateString("fr-FR");
@@ -301,6 +329,22 @@ export default function FacturesPage() {
               <h2 className="text-2xl font-bold">
                 {facture.numero || "Sans numéro"}
               </h2>
+
+              {/* Liens vers documents associés */}
+              <div className="mb-2 flex gap-3 text-sm">
+                {/* Lien vers livraison si disponible */}
+                <button
+                  onClick={async () => {
+                    const result = await getLivraisonForFacture(facture);
+                    if (result.exists && result.livraisonId) {
+                      window.location.href = `/livraisons/modifier/${result.livraisonId}`;
+                    }
+                  }}
+                  className="text-blue-400 hover:text-blue-300"
+                >
+                  📦 Livraison d'origine
+                </button>
+              </div>
 
               <p>Client : {facture.client || "Non renseigné"}</p>
               <p>Montant TTC : {formatPrix(facture.montant_ttc)}</p>
