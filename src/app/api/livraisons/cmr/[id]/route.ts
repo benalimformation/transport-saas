@@ -1,4 +1,5 @@
 import { supabase } from "../../../../../lib/supabase";
+import { getCompanyParams, getLogoBuffer } from "../../../../../lib/getCompanyParams";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,16 @@ export async function GET(
     .eq("id", livraison.camion_id)
     .single();
 
+  // Get company parameters
+  const companyParams = livraison.entreprise_id
+    ? await getCompanyParams(livraison.entreprise_id)
+    : null;
+
+  // Get logo buffer if available
+  const logoBuffer = companyParams?.logo_url
+    ? await getLogoBuffer(companyParams.logo_url)
+    : null;
+
   const doc = new PDFDocument({ margin: 35 });
   const chunks: Buffer[] = [];
 
@@ -56,13 +67,40 @@ export async function GET(
     ? livraison.heure_limite.slice(0, 5)
     : "Non renseignée";
 
-  doc.fontSize(18).text("LETTRE DE VOITURE INTERNATIONALE", 35, 25);
-  doc.fontSize(20).text("CMR", 480, 25);
-  doc.fontSize(8).text("Convention relative au contrat de transport international de marchandises par route", 35, 50);
+  // Add company header with logo
+  if (logoBuffer) {
+    doc.image(logoBuffer, 35, 25, { width: 80 });
+  } else {
+    doc.fontSize(12).text(companyParams?.nom || "TRANSPORT SAAS", 35, 30);
+  }
 
-  doc.fontSize(9).text(`CMR n° : CMR-${String(livraison.id).slice(0, 8).toUpperCase()}`, 35, 70);
-  doc.text(`Date édition : ${new Date().toLocaleDateString("fr-FR")}`, 250, 70);
-  doc.text(`Statut : ${livraison.statut || "Prévue"}`, 420, 70);
+  // Company contact info
+  doc.fontSize(7);
+  if (companyParams?.adresse) doc.text(companyParams.adresse, 35, 45);
+  if (companyParams?.telephone || companyParams?.email) {
+    let contactLine = "";
+    if (companyParams.telephone) contactLine += `Tél: ${companyParams.telephone}`;
+    if (companyParams.email) {
+      if (contactLine) contactLine += ` | `;
+      contactLine += `Email: ${companyParams.email}`;
+    }
+    doc.text(contactLine, 35, 55);
+  }
+  if (companyParams?.site_web) doc.text(companyParams.site_web, 35, 65);
+
+  // Legal info
+  doc.fontSize(6);
+  if (companyParams?.siret) doc.text(`SIRET: ${companyParams.siret}`, 35, 75);
+  if (companyParams?.tva_intra) doc.text(`TVA Intra: ${companyParams.tva_intra}`, 35, 85);
+
+  // CMR Title (moved down to make room for company header)
+  doc.fontSize(18).text("LETTRE DE VOITURE INTERNATIONALE", 35, 105);
+  doc.fontSize(20).text("CMR", 480, 105);
+  doc.fontSize(8).text("Convention relative au contrat de transport international de marchandises par route", 35, 130);
+
+  doc.fontSize(9).text(`CMR n° : CMR-${String(livraison.id).slice(0, 8).toUpperCase()}`, 35, 150);
+  doc.text(`Date édition : ${new Date().toLocaleDateString("fr-FR")}`, 250, 150);
+  doc.text(`Statut : ${livraison.statut || "Prévue"}`, 420, 150);
 
   box(35, 95, 250, 70, "1. Expéditeur", livraison.client || "");
   box(285, 95, 270, 70, "2. Destinataire", livraison.destinataire || livraison.client || "");
@@ -101,7 +139,7 @@ export async function GET(
     250,
     65,
     "16. Transporteur",
-    `Transport SaaS\nChauffeur : ${chauffeur?.nom || "Non affecté"}\nCamion : ${camion?.immatriculation || "Non affecté"}`
+    `${companyParams?.nom || "Transport SaaS"}\nChauffeur : ${chauffeur?.nom || "Non affecté"}\nCamion : ${camion?.immatriculation || "Non affecté"}`
   );
 
   box(
@@ -129,7 +167,7 @@ export async function GET(
   doc.fontSize(11).text(livraison.signature_destinataire || "", 395, 590);
 
   doc.fontSize(7).text(
-    "Document CMR généré automatiquement par Transport SaaS. Document à vérifier et compléter selon les exigences réglementaires applicables.",
+    companyParams?.mentions_legales || "Document CMR généré automatiquement par Transport SaaS. Document à vérifier et compléter selon les exigences réglementaires applicables.",
     35,
     660,
     { align: "center", width: 520 }
