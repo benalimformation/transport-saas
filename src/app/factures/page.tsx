@@ -176,6 +176,13 @@ export default function FacturesPage() {
   }
 
   async function marquerPayee(id: string) {
+    // Vérifier d'abord si la facture est déjà payée
+    const factureToMark = factures.find(f => f.id === id);
+    if (factureToMark?.statut === "Payée") {
+      alert("❌ Cette facture est déjà marquée comme payée et ne peut pas être modifiée.");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("factures")
