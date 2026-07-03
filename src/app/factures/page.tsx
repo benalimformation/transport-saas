@@ -147,6 +147,13 @@ export default function FacturesPage() {
   }
 
   async function supprimerFacture(id: string) {
+    // Vérifier d'abord si la facture est payée
+    const factureToDelete = factures.find(f => f.id === id);
+    if (factureToDelete?.statut === "Payée") {
+      alert("❌ Impossible de supprimer une facture payée. Une facture payée est verrouillée pour des raisons comptables.");
+      return;
+    }
+
     if (!confirm("Supprimer cette facture ?")) return;
 
     try {
@@ -380,10 +387,17 @@ export default function FacturesPage() {
                 <button
                   onClick={() => supprimerFacture(facture.id)}
                   className="rounded bg-red-600 px-4 py-2"
+                  disabled={facture.statut === "Payée"}
                 >
                   Supprimer
                 </button>
               </div>
+
+              {facture.statut === "Payée" && (
+                <p className="mt-2 text-sm font-bold text-blue-400">
+                  🔒 Facture verrouillée - Aucune modification possible
+                </p>
+              )}
             </div>
           ))
         )}
