@@ -118,6 +118,13 @@ export default function LivraisonsPage() {
   }
 
   async function supprimerLivraison(id: string) {
+    // Vérifier d'abord si la livraison est déjà facturée
+    const factureExists = await checkFactureExists(id);
+    if (factureExists) {
+      alert("❌ Impossible de supprimer une livraison déjà facturée. Supprimez d'abord la facture associée.");
+      return;
+    }
+
     if (!confirm("Supprimer cette livraison ?")) return;
 
     try {
