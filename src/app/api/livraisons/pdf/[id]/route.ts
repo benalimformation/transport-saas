@@ -1,4 +1,5 @@
 import { supabase } from "../../../../../lib/supabase";
+import { getCompanyParams, getLogoBuffer } from "../../../../../lib/getCompanyParams";
 export const runtime = "nodejs";
 
 export async function GET(
@@ -27,11 +28,21 @@ export async function GET(
   .select("nom")
   .eq("id", livraison.chauffeur_id)
   .single();
-const { data: camion } = await supabase
+  const { data: camion } = await supabase
   .from("camions")
   .select("immatriculation")
   .eq("id", livraison.camion_id)
   .single();
+
+  // Get company parameters
+  const companyParams = livraison.entreprise_id
+    ? await getCompanyParams(livraison.entreprise_id)
+    : null;
+
+  // Get logo buffer if available
+  const logoBuffer = companyParams?.logo_url
+    ? await getLogoBuffer(companyParams.logo_url)
+    : null;
 
   const doc = new PDFDocument({ margin: 50 });
   const chunks: Buffer[] = [];
@@ -41,8 +52,41 @@ const { data: camion } = await supabase
     doc.on("end", () => resolve(Buffer.concat(chunks)));
   });
 
-  doc.fontSize(22).text("TRANSPORT SAAS", 50, 40);
-  doc.fontSize(10).text("Bon de transport", 50, 68);
+  // Add logo if available
+  if (logoBuffer) {
+    doc.image(logoBuffer, 50, 40, { width: 100 });
+  } else {
+    // Fallback to text header
+    doc.fontSize(22).text(companyParams?.nom || "TRANSPORT SAAS", 50, 40);
+  }
+
+  // Company info
+  doc.fontSize(10);
+  if (companyParams?.adresse) doc.text(companyParams.adresse, 50, 70);
+  if (companyParams?.telephone || companyParams?.email) {
+    let contactLine = "";
+    if (companyParams.telephone) contactLine += `Tél: ${companyParams.telephone}`;
+    if (companyParams.email) {
+      if (contactLine) contactLine += ` | `;
+      contactLine += `Email: ${companyParams.email}`;
+    }
+    doc.text(contactLine, 50, 85);
+  }
+  if (companyParams?.site_web) doc.text(companyParams.site_web, 50, 100);
+
+  // Legal and banking info
+  doc.fontSize(8);
+  if (companyParams?.siret) doc.text(`SIRET: ${companyParams.siret}`, 50, 115);
+  if (companyParams?.tva_intra) doc.text(`TVA Intra: ${companyParams.tva_intra}`, 50, 130);
+  if (companyParams?.iban || companyParams?.bic) {
+    let bankInfo = "";
+    if (companyParams.iban) bankInfo += `IBAN: ${companyParams.iban}`;
+    if (companyParams.bic) {
+      if (bankInfo) bankInfo += ` | `;
+      bankInfo += `BIC: ${companyParams.bic}`;
+    }
+    doc.text(bankInfo, 50, 145);
+  }
 
   doc.fontSize(20).text("BON DE TRANSPORT", 0, 110, {
     align: "center",
@@ -99,7 +143,7 @@ if (livraison.date_signature) {
     );
 }
 
-  doc.fontSize(9).text("Document généré automatiquement par Transport SaaS.", 50, 730, {
+  doc.fontSize(9).text(companyParams?.mentions_legales || "Document généré automatiquement par Transport SaaS.", 50, 730, {
     align: "center",
   });
 
