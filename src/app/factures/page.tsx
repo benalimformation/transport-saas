@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { MODULE_PERMISSIONS, isAuthorized } from "../../lib/permissions";
+import { getStatusBadgeClass } from "../../lib/statusBadge";
 
 type Facture = {
   id: string;
@@ -333,7 +334,17 @@ export default function FacturesPage() {
 
       <div className="space-y-4">
         {factures.length === 0 ? (
-          <p className="text-gray-400">Aucune facture pour le moment.</p>
+          <div className="text-center py-12">
+            <div className="mb-4 text-6xl">💰</div>
+            <h3 className="text-xl font-bold mb-2">Aucune facture</h3>
+            <p className="text-gray-400 mb-6">Les factures apparaîtront ici.</p>
+            <a
+              href="/factures/nouveau"
+              className="inline-block rounded bg-green-600 px-6 py-3 hover:bg-green-700"
+            >
+              Créer une facture
+            </a>
+          </div>
         ) : (
           factures.map((facture) => (
             <div
@@ -365,15 +376,11 @@ export default function FacturesPage() {
               <p>Date facture : {formatDate(facture.date_facture)}</p>
               <p>Échéance : {formatDate(facture.date_echeance)}</p>
 
-              <p
-                className={
-                  facture.statut === "Payée"
-                    ? "mt-2 font-bold text-green-400"
-                    : "mt-2 font-bold text-orange-400"
-                }
-              >
-                Statut : {facture.statut || "Non payée"}
-              </p>
+              <div className="mt-2 flex items-center gap-3">
+                <span className={getStatusBadgeClass(facture.statut || "Non payée")}>
+                  {facture.statut || "Non payée"}
+                </span>
+              </div>
 
               {facture.date_paiement && (
                 <p className="text-sm text-gray-400">

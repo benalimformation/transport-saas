@@ -125,7 +125,17 @@ export default function ClientsPage() {
 
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
         {clients.length === 0 ? (
-          <p className="text-gray-400">Aucun client pour le moment.</p>
+          <div className="text-center py-12">
+            <div className="mb-4 text-6xl">👥</div>
+            <h3 className="text-xl font-bold mb-2">Aucun client enregistré</h3>
+            <p className="text-gray-400 mb-6">Bénéficiez d'un meilleur suivi en créant votre premier client.</p>
+            <a
+              href="/clients/nouveau"
+              className="inline-block rounded bg-green-600 px-6 py-3 hover:bg-green-700"
+            >
+              Créer un client
+            </a>
+          </div>
         ) : (
           clients.map((client) => (
             <div key={client.id} className="border-b border-gray-800 py-4">

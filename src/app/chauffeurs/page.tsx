@@ -128,7 +128,17 @@ export default function ChauffeursPage() {
 
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
         {chauffeurs.length === 0 ? (
-          <p className="text-gray-400">Aucun chauffeur pour cette entreprise.</p>
+          <div className="text-center py-12">
+            <div className="mb-4 text-6xl">👨‍🚚</div>
+            <h3 className="text-xl font-bold mb-2">Aucun chauffeur enregistré</h3>
+            <p className="text-gray-400 mb-6">Ajoutez vos chauffeurs pour gérer votre équipe.</p>
+            <a
+              href="/chauffeurs/nouveau"
+              className="inline-block rounded bg-green-600 px-6 py-3 hover:bg-green-700"
+            >
+              Ajouter un chauffeur
+            </a>
+          </div>
         ) : (
           chauffeurs.map((chauffeur) => (
             <div key={chauffeur.id} className="border-b border-gray-800 py-4">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { MODULE_PERMISSIONS, isAuthorized } from "../../lib/permissions";
+import { getStatusBadgeClass } from "../../lib/statusBadge";
 
 type Devis = {
   id: string;
@@ -308,14 +309,24 @@ export default function DevisPage() {
         ) : (
           <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
             {devis.length === 0 ? (
-              <p className="text-gray-400">Aucun devis pour cette entreprise.</p>
+              <div className="text-center py-12">
+                <div className="mb-4 text-6xl">📄</div>
+                <h3 className="text-xl font-bold mb-2">Aucun devis</h3>
+                <p className="text-gray-400 mb-6">Commencez par créer votre premier devis.</p>
+                <a
+                  href="/devis/nouveau"
+                  className="inline-block rounded bg-green-600 px-6 py-3 hover:bg-green-700"
+                >
+                  Créer un devis
+                </a>
+              </div>
             ) : (
               devis.map((item) => (
                 <div key={item.id} className="border-b border-gray-800 py-5">
                   <div className="mb-3 flex items-center gap-3">
                     <p className="text-2xl font-bold">{item.client}</p>
 
-                    <span className="rounded-full bg-slate-700 px-3 py-1 text-sm font-bold">
+                    <span className={getStatusBadgeClass(item.statut || "Brouillon")}>
                       {item.statut || "Brouillon"}
                     </span>
                   </div>

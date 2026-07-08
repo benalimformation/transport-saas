@@ -299,10 +299,15 @@ export default function DepensesPage() {
             <p className="mt-2 text-gray-400">Chargement des dépenses...</p>
           </div>
         ) : depenses.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-400">Aucune dépense enregistrée pour le moment.</p>
-            <a href="/depenses/nouveau" className="mt-4 inline-block rounded bg-blue-600 px-4 py-2 hover:bg-blue-700">
-              Créer votre première dépense
+          <div className="text-center py-12">
+            <div className="mb-4 text-6xl">💸</div>
+            <h3 className="text-xl font-bold mb-2">Aucune dépense enregistrée</h3>
+            <p className="text-gray-400 mb-6">Suivez vos coûts en enregistrant vos premières dépenses.</p>
+            <a
+              href="/depenses/nouveau"
+              className="inline-block rounded bg-green-600 px-6 py-3 hover:bg-green-700"
+            >
+              Créer une dépense
             </a>
           </div>
         ) : (

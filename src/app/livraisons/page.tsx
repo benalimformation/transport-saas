@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { MODULE_PERMISSIONS, isAuthorized } from "../../lib/permissions";
+import { getStatusBadgeClass } from "../../lib/statusBadge";
 
 type Livraison = {
   id: string;
@@ -305,7 +306,17 @@ export default function LivraisonsPage() {
 
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
         {livraisons.length === 0 ? (
-          <p className="text-gray-400">Aucune livraison pour cette entreprise.</p>
+          <div className="text-center py-12">
+            <div className="mb-4 text-6xl">🚛</div>
+            <h3 className="text-xl font-bold mb-2">Aucune livraison</h3>
+            <p className="text-gray-400 mb-6">Les livraisons créées seront visibles ici.</p>
+            <a
+              href="/livraisons/nouveau"
+              className="inline-block rounded bg-green-600 px-6 py-3 hover:bg-green-700"
+            >
+              Créer une livraison
+            </a>
+          </div>
         ) : (
           livraisons.map((livraison) => (
             <div key={livraison.id} className="border-b border-gray-800 py-5">
@@ -345,9 +356,11 @@ export default function LivraisonsPage() {
 <p className="font-bold text-green-400">
   Prix TTC : {livraison.prix_ttc ?? 0} €
 </p>
-              <p className="mt-2 text-green-400">
-                Statut : {livraison.statut || "Prévue"}
-              </p>
+              <div className="mt-2 flex items-center gap-3">
+                <span className={getStatusBadgeClass(livraison.statut || "Prévue")}>
+                  {livraison.statut || "Prévue"}
+                </span>
+              </div>
 
               {livraison.signature_chauffeur && livraison.signature_destinataire ? (
                 <p className="mt-1 font-bold text-green-500">✓ Livraison signée</p>
