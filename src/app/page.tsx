@@ -1,7 +1,60 @@
+'use client';
+
 import ScreenPlaceholder from '@/components/ScreenPlaceholder';
 import { ArrowRight, Check, ChevronDown, ChevronRight, Truck, Users, FileText, MapPin, DollarSign, BarChart, CreditCard, Shield, Clock, Headset, Cloud, Zap, Target, PieChart, HelpCircle } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Home() {
+  // Slider state
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  // FAQ state
+  const [activeFaq, setActiveFaq] = useState<number | null>(null);
+
+  const slides = [
+    { title: "Dashboard", subtitle: "Vue d'ensemble de votre activité" },
+    { title: "Clients", subtitle: "Gestion de votre portefeuille" },
+    { title: "Devis", subtitle: "Création de devis professionnels" },
+    { title: "Livraisons", subtitle: "Suivi des livraisons en temps réel" },
+    { title: "Factures", subtitle: "Facturation simplifiée" },
+    { title: "Rentabilité", subtitle: "Analyse de performance" }
+  ];
+
+  const faqs = [
+    {
+      question: "Quelle est la période d'essai ?",
+      answer: "Nous offrons 30 jours d'essai gratuit sans engagement et sans carte bancaire requise."
+    },
+    {
+      question: "Puis-je importer mes données existantes ?",
+      answer: "Oui, nous proposons des outils d'import pour Excel et autres formats courants."
+    },
+    {
+      question: "Comment se passe la formation ?",
+      answer: "Nous fournissons des guides vidéo, une documentation complète et un support réactif."
+    },
+    {
+      question: "Quelle est la politique de remboursement ?",
+      answer: "Vous pouvez annuler à tout moment et nous offrons une garantie satisfait ou remboursé de 14 jours."
+    },
+    {
+      question: "Le logiciel est-il sécurisé ?",
+      answer: "Oui, nous utilisons un hébergement français sécurisé avec chiffrement des données."
+    }
+  ];
+
+  const nextSlide = () => {
+    setActiveSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  const prevSlide = () => {
+    setActiveSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
+  const toggleFaq = (index: number) => {
+    setActiveFaq(activeFaq === index ? null : index);
+  };
+
   return (
     <main className="bg-white text-gray-900">
       {/* Navigation */}
@@ -266,31 +319,34 @@ export default function Home() {
           </div>
           <div className="relative">
             <div className="overflow-hidden">
-              <div className="flex transition-transform duration-300 ease-in-out">
-                {[
-                  { title: "Dashboard", subtitle: "Vue d'ensemble de votre activité" },
-                  { title: "Clients", subtitle: "Gestion de votre portefeuille" },
-                  { title: "Devis", subtitle: "Création de devis professionnels" },
-                  { title: "Livraisons", subtitle: "Suivi des livraisons en temps réel" },
-                  { title: "Factures", subtitle: "Facturation simplifiée" },
-                  { title: "Rentabilité", subtitle: "Analyse de performance" }
-                ].map((preview, index) => (
-                  <div key={preview.title} className="w-full flex-shrink-0 px-4">
+              <div className="flex transition-transform duration-300 ease-in-out" style={{ transform: `translateX(-${activeSlide * 100}%)` }}>
+                {slides.map((slide, index) => (
+                  <div key={slide.title} className="w-full flex-shrink-0 px-4">
                     <ScreenPlaceholder
-                      title={preview.title}
-                      subtitle={preview.subtitle}
+                      title={slide.title}
+                      subtitle={slide.subtitle}
                       height="300px"
                     />
                   </div>
                 ))}
               </div>
             </div>
-            <button className="absolute left-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-50">
+            <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-50 z-10">
               <ChevronRight className="w-5 h-5 text-gray-600 -rotate-180" />
             </button>
-            <button className="absolute right-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-50">
+            <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-50 z-10">
               <ChevronRight className="w-5 h-5 text-gray-600" />
             </button>
+            <div className="flex justify-center mt-6 space-x-2">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveSlide(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${index === activeSlide ? 'bg-green-600' : 'bg-gray-300'}`}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -461,34 +517,18 @@ export default function Home() {
             </h2>
           </div>
           <div className="space-y-4">
-            {[
-              {
-                question: "Quelle est la période d'essai ?",
-                answer: "Nous offrons 30 jours d'essai gratuit sans engagement et sans carte bancaire requise."
-              },
-              {
-                question: "Puis-je importer mes données existantes ?",
-                answer: "Oui, nous proposons des outils d'import pour Excel et autres formats courants."
-              },
-              {
-                question: "Comment se passe la formation ?",
-                answer: "Nous fournissons des guides vidéo, une documentation complète et un support réactif."
-              },
-              {
-                question: "Quelle est la politique de remboursement ?",
-                answer: "Vous pouvez annuler à tout moment et nous offrons une garantie satisfait ou remboursé de 14 jours."
-              },
-              {
-                question: "Le logiciel est-il sécurisé ?",
-                answer: "Oui, nous utilisons un hébergement français sécurisé avec chiffrement des données."
-              }
-            ].map((faq, index) => (
+            {faqs.map((faq, index) => (
               <div key={index} className="bg-white rounded-lg border border-gray-200">
-                <button className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={() => toggleFaq(index)}
+                  className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
+                >
                   <span className="font-medium text-gray-900">{faq.question}</span>
-                  <ChevronDown className="w-5 h-5 text-gray-400 transform transition-transform" />
+                  <ChevronDown
+                    className={`w-5 h-5 text-gray-400 transform transition-transform ${activeFaq === index ? 'rotate-180' : ''}`}
+                  />
                 </button>
-                <div className="px-6 pb-4 text-gray-600 hidden">
+                <div className={`px-6 pb-4 text-gray-600 overflow-hidden transition-all duration-300 ${activeFaq === index ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
                   {faq.answer}
                 </div>
               </div>
