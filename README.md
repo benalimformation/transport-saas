@@ -1,36 +1,150 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚛 Transport SaaS ERP
 
-## Getting Started
+**ERP SaaS français destiné aux artisans, TPE et PME du transport routier**
 
-First, run the development server:
+*Transport Simplifié. Gestion Maîtrisée.*
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Sommaire
+
+- [Présentation](#présentation)
+- [Fonctionnalités](#fonctionnalités)
+- [Workflow métier](#workflow-métier)
+- [Garanties métier](#garanties-métier)
+- [Stack technique](#stack-technique)
+- [Architecture](#architecture)
+- [Composants Demo](#composants-demo)
+- [Conventions de développement](#conventions-de-développement)
+- [Installation](#installation)
+- [Roadmap](#roadmap)
+
+## Présentation
+
+Transport SaaS est un logiciel ERP conçu spécifiquement pour les petites entreprises de transport routier (1 à 30 véhicules). Notre solution accompagne les transporteurs du devis jusqu'au paiement, en passant par la gestion des livraisons, des documents réglementaires et de la rentabilité.
+
+**Positionnement** : ERP de gestion pour les petites entreprises de transport, pas un TMS.
+
+**Cible** :
+- Transporteurs indépendants
+- Artisans du transport
+- PME de transport routier
+- Entreprises avec 1 à 30 véhicules
+
+**Objectif** : Remplacer les outils traditionnels (Excel, Word, WhatsApp, papier) par une solution moderne, intégrée et optimisée pour le métier du transport.
+
+## Fonctionnalités
+
+### Modules principaux
+
+- **Dashboard** : Vue d'ensemble de l'activité avec indicateurs clés
+- **Clients** : Gestion complète du portefeuille clients
+- **Devis** : Création et suivi des devis professionnels
+- **Livraisons** : Planification et suivi des livraisons en temps réel
+- **Bon de transport** : Génération automatique des bons de transport
+- **CMR** : Création des lettres de voiture CMR conformes
+- **Factures** : Facturation automatique et gestion des paiements
+- **Dépenses** : Suivi des coûts d'exploitation et analyse
+- **Rentabilité** : Analyse financière par client, trajet et véhicule
+- **Camions** : Gestion de la flotte et suivi des véhicules
+- **Chauffeurs** : Gestion des conducteurs et de leurs documents
+- **Utilisateurs** : Gestion des accès et permissions
+- **Paramètres entreprise** : Configuration des paramètres spécifiques
+
+## Workflow métier
+
+```mermaid
+graph TD
+    A[Client] --> B[Devis]
+    B --> C[Livraison]
+    C --> D[Bon de transport]
+    D --> E[CMR]
+    E --> F[Facture]
+    F --> G[Paiement]
+    G --> H[Rentabilité]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Garanties métier
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Une livraison ne peut être facturée qu'une seule fois
+- Une livraison facturée ne peut plus être supprimée
+- Une facture payée est définitivement verrouillée
+- Les PDF utilisent les paramètres entreprise
+- Les CMR sont générés automatiquement
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Stack technique
 
-## Learn More
+- **Frontend** : Next.js 16 + TypeScript
+- **UI** : Tailwind CSS
+- **Backend** : Supabase (PostgreSQL + Auth)
+- **Storage** : Supabase Storage
 
-To learn more about Next.js, take a look at the following resources:
+## Architecture
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/               # Pages et routing Next.js
+├── components/        # Composants réutilisables
+│   └── demo/          # Composants de démonstration
+├── hooks/             # Hooks React personnalisés
+├── lib/               # Fonctions et utilitaires
+└── types/             # Définitions TypeScript
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Composants Demo
 
-## Deploy on Vercel
+Les composants présents dans `src/components/demo/` sont des composants statiques destinés à :
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Landing Page** : Démonstration des fonctionnalités
+- **Site officiel** : Exemples visuels
+- **Documentation** : Captures d'écran
+- **Marketing** : Supports commerciaux
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ces composants sont :
+- Totalement statiques
+- Sans logique métier
+- Sans appels API
+- Sans connexion à Supabase
+- Avec données mockées uniquement
+
+## Conventions de développement
+
+### Règles du projet
+
+1. **Petits sprints** : Chaque modification doit être ciblée et limitée
+2. **Peu de fichiers modifiés** : Se concentrer sur l'objectif spécifique
+3. **Build obligatoire** : Toujours vérifier que le build passe
+4. **Git status obligatoire** : Vérifier les modifications avant validation
+5. **Pas de gros refactoring** : Éviter les modifications massives
+6. **Aucun commit automatique** : Tous les commits doivent être manuels et réfléchis
+7. **Composants simples** : Privilégier la simplicité et la maintenabilité
+
+### Bonnes pratiques
+
+- **TypeScript strict** : Typage fort et interfaces claires
+- **Composants réutilisables** : Éviter la duplication de code
+- **Responsive natif** : Tous les composants doivent être adaptés mobile
+- **Accessibilité** : Respect des standards WCAG
+- **Performance** : Optimisation des assets et lazy loading
+
+## Installation
+
+```bash
+# Installer les dépendances
+npm install
+
+# Lancer le serveur de développement
+npm run dev
+
+# Build pour production
+npm run build
+```
+
+## Roadmap
+
+- Finalisation des composants Demo
+- Intégration dans la Landing
+- Optimisation UX
+- Préparation de la commercialisation
+
+---
+
+**Transport Simplifié. Gestion Maîtrisée.** © 2026 Transport SaaS ERP. Tous droits réservés.

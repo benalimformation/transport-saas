@@ -27,6 +27,10 @@ export default function DashboardPage() {
   const [totalDepenses, setTotalDepenses] = useState(0);
   const [benefice, setBenefice] = useState(0);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [hasClients, setHasClients] = useState<boolean>(false);
+  const [hasDevis, setHasDevis] = useState<boolean>(false);
+  const [hasFactures, setHasFactures] = useState<boolean>(false);
+  const [hasLivraisons, setHasLivraisons] = useState<boolean>(false);
 
   useEffect(() => {
     initialiserDashboard();
@@ -57,6 +61,30 @@ export default function DashboardPage() {
   }
 
   async function chargerKPI(idEntreprise: string) {
+    // Check if this is a new account (no clients yet)
+    const { data: clientsData, error: clientsError } = await supabase
+      .from("clients")
+      .select("id")
+      .eq("entreprise_id", idEntreprise)
+      .limit(1);
+
+    if (clientsError) {
+      alert(clientsError.message);
+      return;
+    }
+
+    const hasClients = clientsData && clientsData.length > 0;
+    setHasClients(hasClients);
+
+    // Check for devis (minimal query)
+    const { data: devisData, error: devisError } = await supabase
+      .from("devis")
+      .select("id")
+      .eq("entreprise_id", idEntreprise)
+      .limit(1);
+
+    const hasDevis = devisData && devisData.length > 0;
+
     const { data: facturesData, error: facturesError } = await supabase
       .from("factures")
       .select("montant_ttc, statut")
@@ -68,6 +96,7 @@ export default function DashboardPage() {
     }
 
     const factures = (facturesData || []) as Facture[];
+    const hasFactures = factures.length > 0;
 
     const totalCA = factures.reduce(
       (somme, facture) => somme + (facture.montant_ttc || 0),
@@ -93,6 +122,7 @@ export default function DashboardPage() {
     }
 
     const livraisons = (livraisonsData || []) as Livraison[];
+    const hasLivraisons = livraisons.length > 0;
 
     const nbLivraisonsEnCours = livraisons.filter(
       (livraison) => livraison.statut !== "Livrée"
@@ -114,6 +144,11 @@ export default function DashboardPage() {
       (somme, depense) => somme + (depense.montant || 0),
       0
     );
+
+    // Set progress tracking
+    setHasDevis(!!hasDevis);
+    setHasFactures(!!hasFactures);
+    setHasLivraisons(!!hasLivraisons);
 
     setCaTTC(totalCA);
     setEncaisse(totalEncaisse);
@@ -148,6 +183,80 @@ export default function DashboardPage() {
           Déconnexion
         </button>
       </div>
+
+      {/* Welcome card for new users (no clients yet) */}
+      {!hasClients && (
+        <div className="mb-8 rounded-xl border border-gray-700 bg-gray-900 p-6">
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <span className="text-3xl">👋</span>
+            </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-white mb-2">Bienvenue dans Transport SaaS ERP</h2>
+              <p className="text-gray-300 mb-4">
+                Votre espace est prêt. Créez votre premier dossier pour découvrir le fonctionnement complet du logiciel.
+              </p>
+              <div className="space-y-2 text-sm text-gray-400 mb-4">
+                <div className="flex items-center">
+                  <span className="mr-2">{hasClients ? '✅' : '□'}</span>
+                  <span>Créer un premier client</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="mr-2">{hasDevis ? '✅' : '□'}</span>
+                  <span>Créer un premier devis</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="mr-2">{hasLivraisons ? '✅' : '□'}</span>
+                  <span>Transformer en livraison</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="mr-2">{hasFactures ? '✅' : '□'}</span>
+                  <span>Générer la première facture</span>
+                </div>
+              </div>
+              {/* Adaptive button based on progress */}
+              {!hasClients && (
+                <a
+                  href="/clients/nouveau"
+                  className="inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
+                >
+                  Créer mon premier client
+                </a>
+              )}
+              {hasClients && !hasDevis && (
+                <a
+                  href="/devis/nouveau"
+                  className="inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
+                >
+                  Créer mon premier devis
+                </a>
+              )}
+              {hasClients && hasDevis && !hasLivraisons && (
+                <a
+                  href="/livraisons/nouveau"
+                  className="inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
+                >
+                  Créer ma première livraison
+                </a>
+              )}
+              {hasClients && hasDevis && hasLivraisons && !hasFactures && (
+                <a
+                  href="/factures/nouveau"
+                  className="inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
+                >
+                  Créer ma première facture
+                </a>
+              )}
+              {hasClients && hasDevis && hasLivraisons && hasFactures && (
+                <div className="text-center">
+                  <p className="text-green-400 font-medium mb-2">🎉 Tous les éléments sont en place !</p>
+                  <p className="text-gray-400 text-sm mb-4">Votre espace est maintenant opérationnel.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">

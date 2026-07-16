@@ -120,7 +120,7 @@ console.log("Livraison sélectionnée :", livraison);
       return;
     }
 
-    window.location.href = "/factures";
+    window.location.href = "/dashboard";
   }
 
   return (

@@ -1,6 +1,8 @@
 'use client';
 
 import ScreenPlaceholder from '@/components/ScreenPlaceholder';
+import DashboardDemo from '@/components/demo/DashboardDemo';
+import ClientsDemo from '@/components/demo/ClientsDemo';
 import { ArrowRight, Check, ChevronDown, ChevronRight, Truck, Users, FileText, MapPin, DollarSign, BarChart, CreditCard, Shield, Clock, Headset, Cloud, Zap, Target, PieChart, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
 
@@ -93,48 +95,46 @@ export default function Home() {
                 GESTION MAÎTRISÉE.
               </h1>
               <p className="text-xl text-gray-600 mb-8">
-                Le premier ERP de gestion conçu pour les petites entreprises de transport.
+                ERP conçu spécialement pour les artisans, TPE et PME du transport routier.
               </p>
               <p className="text-lg text-gray-500 mb-8 leading-relaxed">
-                Gérez vos clients,<br />
-                vos devis,<br />
-                vos livraisons,<br />
-                vos factures<br />
-                et votre rentabilité<br />
-                dans une seule application.
+                Remplacez Excel, Word, WhatsApp et le papier<br />
+                par une solution unique et professionnelle.<br />
+                Créez un devis en quelques secondes,<br />
+                générez vos CMR automatiquement,<br />
+                et pilotez enfin votre rentabilité.
+              </p>
+              <p className="text-sm text-gray-500 mb-6 italic">
+                Découvrez en quelques minutes comment gérer un transport de A à Z : devis, livraison, CMR, facture et rentabilité.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <a href="#" className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md font-medium transition-colors inline-flex items-center">
-                  Commencer gratuitement
+                <a href="/register" className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md font-medium transition-colors inline-flex items-center">
+                  🚛 Essayer gratuitement pendant 30 jours
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </a>
-                <a href="#" className="bg-white hover:bg-gray-50 text-gray-900 px-6 py-3 rounded-md font-medium transition-colors border border-gray-200 inline-flex items-center">
-                  Voir une démonstration
+                <a href="#modules" className="bg-white hover:bg-gray-50 text-gray-900 px-6 py-3 rounded-md font-medium transition-colors border border-gray-200 inline-flex items-center">
+                  Découvrir le logiciel
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </a>
               </div>
               <div className="mt-6 flex items-center justify-center lg:justify-start space-x-6 text-sm text-gray-500">
                 <div className="flex items-center">
                   <Check className="w-4 h-4 text-green-600 mr-2" />
-                  30 jours gratuits
-                </div>
-                <div className="flex items-center">
-                  <Check className="w-4 h-4 text-green-600 mr-2" />
                   Sans carte bancaire
                 </div>
                 <div className="flex items-center">
                   <Check className="w-4 h-4 text-green-600 mr-2" />
-                  Mise en route en moins de 20 minutes
+                  Sans engagement
+                </div>
+                <div className="flex items-center">
+                  <Check className="w-4 h-4 text-green-600 mr-2" />
+                  Prêt en moins de 5 minutes
                 </div>
               </div>
             </div>
-            <div className="mt-12 lg:mt-0">
-              <ScreenPlaceholder
-                title="Dashboard"
-                subtitle="Tableau de bord complet"
-                className="mx-auto"
-              />
-            </div>
+          <div className="mt-12 lg:mt-0">
+            <DashboardDemo />
+          </div>
           </div>
         </div>
       </section>
@@ -148,8 +148,8 @@ export default function Home() {
               <span className="text-sm font-medium text-gray-700">ERP français</span>
             </div>
             <div className="flex flex-col items-center">
-              <Headset className="w-6 h-6 text-gray-600 mb-2" />
-              <span className="text-sm font-medium text-gray-700">Support réactif</span>
+              <FileText className="w-6 h-6 text-gray-600 mb-2" />
+              <span className="text-sm font-medium text-gray-700">CMR et bons de transport intégrés</span>
             </div>
             <div className="flex flex-col items-center">
               <Cloud className="w-6 h-6 text-gray-600 mb-2" />
@@ -225,7 +225,7 @@ export default function Home() {
       </section>
 
       {/* Modules Section */}
-      <section className="py-16 bg-white">
+      <section id="modules" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -322,11 +322,15 @@ export default function Home() {
               <div className="flex transition-transform duration-300 ease-in-out" style={{ transform: `translateX(-${activeSlide * 100}%)` }}>
                 {slides.map((slide, index) => (
                   <div key={slide.title} className="w-full flex-shrink-0 px-4">
-                    <ScreenPlaceholder
-                      title={slide.title}
-                      subtitle={slide.subtitle}
-                      height="300px"
-                    />
+                    {index === 1 ? (
+                      <ClientsDemo />
+                    ) : (
+                      <ScreenPlaceholder
+                        title={slide.title}
+                        subtitle={slide.subtitle}
+                        height="300px"
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -546,7 +550,7 @@ export default function Home() {
           <p className="text-lg text-green-100 mb-8 max-w-2xl mx-auto">
             Passez à l'ERP conçu spécialement pour les petites entreprises de transport.
           </p>
-          <a href="#" className="bg-white text-green-600 px-8 py-3 rounded-md font-medium hover:bg-gray-100 transition-colors inline-flex items-center">
+          <a href="/register" className="bg-white text-green-600 px-8 py-3 rounded-md font-medium hover:bg-gray-100 transition-colors inline-flex items-center">
             Commencer gratuitement
             <ArrowRight className="ml-2 w-4 h-4" />
           </a>

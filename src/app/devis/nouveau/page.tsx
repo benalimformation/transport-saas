@@ -137,7 +137,7 @@ export default function NouveauDevisPage() {
       return;
     }
 
-    window.location.href = "/devis";
+    window.location.href = "/dashboard";
   }
 
   return (

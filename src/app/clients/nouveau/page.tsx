@@ -35,23 +35,23 @@ if (profilError || !profil?.entreprise_id) {
   return;
 }
 
-const { error } = await supabase.from("clients").insert([
-  {
-    nom,
-    email,
-    telephone,
-    adresse,
-    observation,
-    entreprise_id: profil.entreprise_id,
-  },
-]);
+    const { error } = await supabase.from("clients").insert([
+      {
+        nom,
+        email,
+        telephone,
+        adresse,
+        observation,
+        entreprise_id: profil.entreprise_id,
+      },
+    ]);
 
     if (error) {
       alert(error.message);
       return;
     }
 
-    router.push("/clients");
+    router.push("/dashboard");
   }
 
   return (

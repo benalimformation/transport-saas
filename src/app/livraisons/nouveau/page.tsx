@@ -169,7 +169,7 @@ setPrixTTC(data.prix_ttc || 0);
       return;
     }
 
-    window.location.href = "/livraisons";
+    window.location.href = "/dashboard";
   }
 
   return (
