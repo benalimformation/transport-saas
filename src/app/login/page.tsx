@@ -186,6 +186,11 @@ export default function LoginPage() {
                     Créer un compte gratuitement
                   </a>
                 </p>
+                <p className="mt-2">
+                  <a href="/forgot-password" className="font-medium text-green-500 hover:text-green-400">
+                    Mot de passe oublié ?
+                  </a>
+                </p>
               </div>
             </form>
           </div>
