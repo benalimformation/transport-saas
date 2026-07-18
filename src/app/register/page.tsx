@@ -22,10 +22,18 @@ export default function RegisterPage() {
     setSuccess(false)
 
     try {
-      // Create user with email and password
+      if (!nom.trim() || !nomEntreprise.trim()) {
+  throw new Error("Le nom et le nom de l’entreprise sont obligatoires")
+}
+      // Create user with email, password, and metadata for company creation
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {nom_entreprise: nomEntreprise.trim(),
+nom_utilisateur: nom.trim(),
+          }
+        }
       })
 
       if (authError) {
@@ -36,21 +44,12 @@ export default function RegisterPage() {
         throw new Error("User not created")
       }
 
-      // Insert into profils table
-      const { error: profileError } = await supabase
-        .from('profils')
-        .insert({
-          id: authData.user.id,
-          email,
-          nom,
-          role: "admin",
-          entreprise_id: authData.user.id
-        })
-
-      if (profileError) {
-        throw profileError
-      }
-
+      // The trigger handle_new_company_user() will automatically:
+      // 1. Create a company in public.entreprises with a proper UUID
+      // 2. Create a profile in public.profils with role='admin' and correct entreprise_id
+      // 3. Create parameters in public.parametres_entreprise
+      // All operations are performed with SECURITY DEFINER and are atomic
+      
       setSuccess(true)
 
           // Redirect to login after successful registration
@@ -131,7 +130,7 @@ export default function RegisterPage() {
 
             {success && (
               <div className="p-4 mb-6 text-sm text-green-400 rounded-lg bg-green-900/30 border border-green-800" role="alert">
-                Compte créé avec succès. Connectez-vous pour commencer votre essai gratuit de 30 jours.
+               Compte créé avec succès. Consultez votre boîte mail pour confirmer votre adresse, puis connectez-vous.
               </div>
             )}
 
@@ -189,15 +188,15 @@ export default function RegisterPage() {
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
                     Mot de passe
-                  </label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                  </label><input
+  id="password"
+  name="password"
+  type="password"
+  autoComplete="new-password"
+  required
+  minLength={8}
+  value={password}
+  onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white placeholder-gray-400"
                     placeholder="••••••••••••"
                   />
