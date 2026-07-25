@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { getDashboardCardsForRole, Role } from "../../lib/permissions";
+import DashboardShell from "../../components/dashboard/DashboardShell";
+import DashboardSection from "../../components/dashboard/DashboardSection";
+import { DashboardCard } from "../../components/dashboard/DashboardSection";
+import KpiCard from "../../components/dashboard/KpiCard";
+import { Truck, Package, CreditCard, TrendingUp, AlertCircle, Users, Calendar, BarChart, PackageCheck, Eye, UserX, Car, FileText, ShieldCheck } from "lucide-react";
+import RadarTransport from "../../components/dashboard/RadarTransport";
+import PriorityAlerts from "../../components/dashboard/PriorityAlerts";
 
 type Facture = {
   montant_ttc: number | null;
@@ -172,155 +179,200 @@ export default function DashboardPage() {
   const allowedCards = getDashboardCardsForRole(userRole as Role | null);
 
   return (
-    <main className="min-h-screen bg-gray-950 p-10 text-white">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-5xl font-bold">Dashboard</h1>
-
-        <button
-          onClick={deconnexion}
-          className="rounded bg-red-600 px-4 py-2 hover:bg-red-700"
-        >
-          Déconnexion
-        </button>
-      </div>
-
-      {/* Welcome card for new users (no clients yet) */}
-      {!hasClients && (
-        <div className="mb-8 rounded-xl border border-gray-700 bg-gray-900 p-6">
-          <div className="flex items-start space-x-4">
-            <div className="flex-shrink-0">
-              <span className="text-3xl">👋</span>
-            </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold text-white mb-2">Bienvenue dans Transport SaaS ERP</h2>
-              <p className="text-gray-300 mb-4">
-                Votre espace est prêt. Créez votre premier dossier pour découvrir le fonctionnement complet du logiciel.
-              </p>
-              <div className="space-y-2 text-sm text-gray-400 mb-4">
-                <div className="flex items-center">
-                  <span className="mr-2">{hasClients ? '✅' : '□'}</span>
-                  <span>Créer un premier client</span>
+    <DashboardShell>
+      <div className="space-y-6">
+        {/* 1. Bandeau principal avec ShieldCheck */}
+        <div className="rounded-xl border border-gray-800 bg-gradient-to-r from-gray-900 to-gray-950 p-6 shadow-lg">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-4">
+              <div className="relative">
+                <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-green-500/30 flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5 text-green-400" />
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <span className="mr-2">{hasDevis ? '✅' : '□'}</span>
-                  <span>Créer un premier devis</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="mr-2">{hasLivraisons ? '✅' : '□'}</span>
-                  <span>Transformer en livraison</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="mr-2">{hasFactures ? '✅' : '□'}</span>
-                  <span>Générer la première facture</span>
-                </div>
+                <div className="absolute -inset-1 bg-green-500/5 rounded-full blur"></div>
               </div>
-              {/* Adaptive button based on progress */}
-              {!hasClients && (
-                <a
-                  href="/clients/nouveau"
-                  className="inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
-                >
-                  Créer mon premier client
-                </a>
-              )}
-              {hasClients && !hasDevis && (
-                <a
-                  href="/devis/nouveau"
-                  className="inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
-                >
-                  Créer mon premier devis
-                </a>
-              )}
-              {hasClients && hasDevis && !hasLivraisons && (
-                <a
-                  href="/livraisons/nouveau"
-                  className="inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
-                >
-                  Créer ma première livraison
-                </a>
-              )}
-              {hasClients && hasDevis && hasLivraisons && !hasFactures && (
-                <a
-                  href="/factures/nouveau"
-                  className="inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
-                >
-                  Créer ma première facture
-                </a>
-              )}
-              {hasClients && hasDevis && hasLivraisons && hasFactures && (
-                <div className="text-center">
-                  <p className="text-green-400 font-medium mb-2">🎉 Tous les éléments sont en place !</p>
-                  <p className="text-gray-400 text-sm mb-4">Votre espace est maintenant opérationnel.</p>
-                </div>
-              )}
+              <div>
+                <h2 className="text-2xl font-bold text-white">Votre exploitation est sous contrôle</h2>
+                <p className="text-gray-400 mt-2">Tous les systèmes sont opérationnels • Dernière mise à jour : aujourd'hui</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 bg-gray-900/50 px-3 py-2 rounded-lg">
+                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                <span className="text-sm text-gray-300">Statut : Normal</span>
+              </div>
+              <div className="hidden lg:block text-sm text-gray-500">Dashboard Premium</div>
             </div>
           </div>
         </div>
-      )}
 
-      <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-          <p className="text-gray-400">CA TTC</p>
-          <h2 className="text-3xl font-bold text-green-400">
-            {formatPrix(caTTC)}
-          </h2>
+        {/* 2. Rangée de 6 indicateurs opérationnels - basés sur les données réelles */}
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+          {/* Livraisons prévues */}
+          <KpiCard
+            title="Livraisons prévues"
+            value={livraisonsEnCours}
+            subtitle={livraisonsEnCours > 0 ? `${livraisonsEnCours} en cours` : "Aucune livraison"}
+            icon={PackageCheck}
+            statusColor={livraisonsEnCours > 0 ? "green" : "blue"}
+            href="/livraisons"
+          />
+          
+          {/* Factures impayées */}
+          <KpiCard
+            title="Factures impayées"
+            value={facturesImpayees}
+            subtitle={facturesImpayees > 0 ? `${facturesImpayees} à recouvrer` : "Tout est payé"}
+            icon={CreditCard}
+            statusColor={facturesImpayees > 0 ? "red" : "green"}
+            href="/factures"
+          />
+          
+          {/* Clients actifs */}
+          <KpiCard
+            title="Clients"
+            value={hasClients ? "✓" : "0"}
+            subtitle={hasClients ? "Actifs" : "Aucun client"}
+            icon={Users}
+            statusColor={hasClients ? "green" : "blue"}
+            href="/clients"
+          />
+          
+          {/* CA TTC */}
+          <KpiCard
+            title="CA TTC"
+            value={formatPrix(caTTC)}
+            subtitle={`${formatPrix(encaisse)} encaissé`}
+            icon={TrendingUp}
+            statusColor={caTTC > 0 ? "green" : "blue"}
+            href="/factures"
+          />
+          
+          {/* Bénéfice */}
+          <KpiCard
+            title="Bénéfice"
+            value={formatPrix(benefice)}
+            subtitle={benefice >= 0 ? "Positif" : "Négatif"}
+            icon={BarChart}
+            statusColor={benefice > 0 ? "green" : benefice < 0 ? "red" : "blue"}
+            href="/depenses"
+          />
+          
+          {/* Devis en cours */}
+          <KpiCard
+            title="Devis"
+            value={hasDevis ? "✓" : "0"}
+            subtitle={hasDevis ? "En attente" : "Aucun devis"}
+            icon={FileText}
+            statusColor={hasDevis ? "orange" : "blue"}
+            href="/devis"
+          />
         </div>
 
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-          <p className="text-gray-400">Encaissé</p>
-          <h2 className="text-3xl font-bold text-blue-400">
-            {formatPrix(encaisse)}
-          </h2>
+        {/* 3. Grille principale desktop */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Tournées du jour */}
+          <DashboardSection title="Tournées du jour" subtitle="Planification des livraisons">
+            <div className="h-44 flex items-center justify-center border-2 border-dashed border-gray-800 rounded-lg group-hover:border-gray-700 transition-colors duration-300">
+              <div className="text-center">
+                <p className="text-sm text-gray-500 font-medium">Carte des tournées</p>
+                <p className="text-xs text-gray-600 mt-1">Contenu au Sprint suivant</p>
+              </div>
+            </div>
+          </DashboardSection>
+
+          {/* Radar Transport - widget signature */}
+          <DashboardSection title="Radar Transport" subtitle="État du trafic et alertes">
+            <RadarTransport />
+          </DashboardSection>
+
+          {/* Alertes prioritaires */}
+          <DashboardSection title="Alertes prioritaires" subtitle="Actions requises">
+            <PriorityAlerts />
+          </DashboardSection>
         </div>
 
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-          <p className="text-gray-400">À encaisser</p>
-          <h2 className="text-3xl font-bold text-orange-400">
-            {formatPrix(resteEncaisser)}
-          </h2>
+        {/* 4. Rangée suivante */}
+        <div className="grid gap-5 lg:grid-cols-3">
+          {/* Performance du mois */}
+          <DashboardSection title="Performance du mois" subtitle="Indicateurs clés">
+            <div className="h-44 flex items-center justify-center border-2 border-dashed border-gray-800 rounded-lg group-hover:border-gray-700 transition-colors duration-300">
+              <div className="text-center">
+                <p className="text-sm text-gray-500 font-medium">Graphiques de performance</p>
+                <p className="text-xs text-gray-600 mt-1">Contenu au Sprint suivant</p>
+              </div>
+            </div>
+          </DashboardSection>
+
+          {/* Activité en temps réel */}
+          <DashboardSection title="Activité en temps réel" subtitle="Flux des opérations">
+            <div className="h-44 flex items-center justify-center border-2 border-dashed border-gray-800 rounded-lg group-hover:border-gray-700 transition-colors duration-300">
+              <div className="text-center">
+                <p className="text-sm text-gray-500 font-medium">Flux d'activité</p>
+                <p className="text-xs text-gray-600 mt-1">Contenu au Sprint suivant</p>
+              </div>
+            </div>
+          </DashboardSection>
+
+          {/* Répartition des livraisons */}
+          <DashboardSection title="Répartition des livraisons" subtitle="Par région et type">
+            <div className="h-44 flex items-center justify-center border-2 border-dashed border-gray-800 rounded-lg group-hover:border-gray-700 transition-colors duration-300">
+              <div className="text-center">
+                <p className="text-sm text-gray-500 font-medium">Carte de répartition</p>
+                <p className="text-xs text-gray-600 mt-1">Contenu au Sprint suivant</p>
+              </div>
+            </div>
+          </DashboardSection>
         </div>
 
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-          <p className="text-gray-400">Dépenses</p>
-          <h2 className="text-3xl font-bold text-red-400">
-            {formatPrix(totalDepenses)}
-          </h2>
+        {/* 5. Rangée basse */}
+        <div className="grid gap-5 lg:grid-cols-2">
+          {/* Conseil du jour */}
+          <DashboardSection title="Conseil du jour" subtitle="Optimisation et bonnes pratiques">
+            <div className="h-32 flex items-center justify-center border-2 border-dashed border-gray-800 rounded-lg group-hover:border-gray-700 transition-colors duration-300">
+              <div className="text-center px-4">
+                <p className="text-sm text-gray-500 font-medium">Conseil personnalisé</p>
+                <p className="text-xs text-gray-600 mt-1">Contenu au Sprint suivant</p>
+              </div>
+            </div>
+          </DashboardSection>
+
+          {/* Actions rapides */}
+          <DashboardSection title="Actions rapides" subtitle="Opérations fréquentes">
+            <div className="h-32 flex items-center justify-center border-2 border-dashed border-gray-800 rounded-lg group-hover:border-gray-700 transition-colors duration-300">
+              <div className="text-center px-4">
+                <p className="text-sm text-gray-500 font-medium">Boutons d'action</p>
+                <p className="text-xs text-gray-600 mt-1">Contenu au Sprint suivant</p>
+              </div>
+            </div>
+          </DashboardSection>
         </div>
 
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-          <p className="text-gray-400">Bénéfice encaissé</p>
-          <h2 className="text-3xl font-bold text-emerald-400">
-            {formatPrix(benefice)}
-          </h2>
-        </div>
-
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-          <p className="text-gray-400">Factures impayées</p>
-          <h2 className="text-3xl font-bold text-red-400">
-            {facturesImpayees}
-          </h2>
-        </div>
-
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-          <p className="text-gray-400">Livraisons en cours</p>
-          <h2 className="text-3xl font-bold text-yellow-400">
-            {livraisonsEnCours}
-          </h2>
+        {/* 6. Barre de statut inférieure */}
+        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center">
+                <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                <span className="text-gray-300">Système : Opérationnel</span>
+              </div>
+              <div className="flex items-center">
+                <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                <span className="text-gray-300">Base de données : Connectée</span>
+              </div>
+              <div className="flex items-center">
+                <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                <span className="text-gray-300">API : Répond</span>
+              </div>
+            </div>
+            <div className="text-gray-400 text-xs">
+              Dashboard Sprint 1 • Structure de base
+            </div>
+          </div>
         </div>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {allowedCards.map((card) => (
-          <a
-            key={card.href}
-            href={card.href}
-            className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:bg-gray-800"
-          >
-            <h2 className="text-2xl font-bold">{card.title}</h2>
-            <p className="mt-2 text-gray-400">{card.subtitle}</p>
-          </a>
-        ))}
-      </div>
-    </main>
+    </DashboardShell>
   );
 }

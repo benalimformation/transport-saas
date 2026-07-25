@@ -1,8 +1,8 @@
 'use client';
 
 import ScreenPlaceholder from '@/components/ScreenPlaceholder';
-import DashboardDemo from '@/components/demo/DashboardDemo';
-import ClientsDemo from '@/components/demo/ClientsDemo';
+//import DashboardDemo from '@/components/demo/DashboardDemo';
+//import ClientsDemo from '@/components/demo/ClientsDemo';
 import { ArrowRight, Check, ChevronDown, ChevronRight, Truck, Users, FileText, MapPin, DollarSign, BarChart, CreditCard, Shield, Clock, Headset, Cloud, Zap, Target, PieChart, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
 
@@ -133,7 +133,7 @@ export default function Home() {
               </div>
             </div>
           <div className="mt-12 lg:mt-0">
-            <DashboardDemo />
+           {/* <DashboardDemo />*/}
           </div>
           </div>
         </div>
@@ -210,15 +210,28 @@ export default function Home() {
                 { name: "Facture", icon: DollarSign },
                 { name: "Paiement", icon: CreditCard },
                 { name: "Rentabilité", icon: BarChart }
-              ].map((step, index) => (
-                <div key={step.name} className="flex items-center p-4 bg-white rounded-lg border border-gray-100">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-4">
-                    <step.icon className="w-4 h-4 text-green-600" />
-                  </div>
-                  <span className="font-medium text-gray-900">{step.name}</span>
-                  {index < 7 && <ChevronDown className="ml-auto w-5 h-5 text-gray-300" />}
-                </div>
-              ))}
+ 
+].map((step, index) => {
+  const StepIcon = step.icon
+
+  return (
+    <div key={step.name} className="flex items-center ...">
+      <div className="flex-shrink-0 w-8 h-8 rounded-full ...">
+        <StepIcon className="w-4 h-4 text-green-600" />
+      </div>
+
+      <span className="font-medium text-gray-900">
+        {step.name}
+      </span>
+
+      {index < 7 && (
+        <ChevronDown className="ml-auto ..." />
+      )}
+    </div>
+  )
+})}
+
+      
             </div>
           </div>
         </div>
@@ -269,7 +282,7 @@ export default function Home() {
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
+            <div className="text-ce nter">
               <div className="flex justify-center mb-4">
                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
                   <Clock className="w-6 h-6 text-green-600" />
@@ -323,7 +336,7 @@ export default function Home() {
                 {slides.map((slide, index) => (
                   <div key={slide.title} className="w-full flex-shrink-0 px-4">
                     {index === 1 ? (
-                      <ClientsDemo />
+                      {/*<ClientsDemo />*/}
                     ) : (
                       <ScreenPlaceholder
                         title={slide.title}

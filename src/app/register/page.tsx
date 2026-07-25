@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [nomEntreprise, setNomEntreprise] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -25,6 +26,21 @@ export default function RegisterPage() {
       if (!nom.trim() || !nomEntreprise.trim()) {
   throw new Error("Le nom et le nom de l’entreprise sont obligatoires")
 }
+
+      // Vérifier que les mots de passe correspondent
+      if (password !== confirmPassword) {
+        throw new Error("Les mots de passe ne correspondent pas.")
+      }
+
+      // 1. Vérifier et purger toute session existante avant création
+      const { data: currentSessionData } = await supabase.auth.getSession();
+      if (currentSessionData.session) {
+        const { error: initialSignOutError } = await supabase.auth.signOut();
+        if (initialSignOutError) {
+          throw new Error("Impossible de purger la session précédente. Veuillez vous déconnecter manuellement avant de créer un nouveau compte.");
+        }
+      }
+
       // Create user with email, password, and metadata for company creation
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -44,18 +60,26 @@ nom_utilisateur: nom.trim(),
         throw new Error("User not created")
       }
 
-      // The trigger handle_new_company_user() will automatically:
-      // 1. Create a company in public.entreprises with a proper UUID
-      // 2. Create a profile in public.profils with role='admin' and correct entreprise_id
-      // 3. Create parameters in public.parametres_entreprise
+      // The trigger handle_new_company_user() will automatically create:
+      // 1. A company in public.entreprises with a proper UUID
+      // 2. A profile in public.profils with role='admin' and correct entreprise_id
       // All operations are performed with SECURITY DEFINER and are atomic
-      
+
+      // 2. Vérifier et purger toute session créée par signUp
+      const { data: postSignupSessionData } = await supabase.auth.getSession();
+      if (postSignupSessionData.session) {
+        const { error: signOutError } = await supabase.auth.signOut();
+        if (signOutError) {
+          throw new Error("Impossible de purger la session après l'inscription. Veuillez vous déconnecter manuellement.");
+        }
+      }
+
       setSuccess(true)
 
-          // Redirect to login after successful registration
-          setTimeout(() => {
-            router.push('/login')
-          }, 2000)
+      // Redirect to login after successful registration
+      setTimeout(() => {
+        router.replace('/login')
+      }, 2000)
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during registration')
@@ -130,7 +154,7 @@ nom_utilisateur: nom.trim(),
 
             {success && (
               <div className="p-4 mb-6 text-sm text-green-400 rounded-lg bg-green-900/30 border border-green-800" role="alert">
-               Compte créé avec succès. Consultez votre boîte mail pour confirmer votre adresse, puis connectez-vous.
+               Compte créé avec succès. Connectez-vous pour commencer votre essai gratuit de 30 jours.
               </div>
             )}
 
@@ -197,6 +221,24 @@ nom_utilisateur: nom.trim(),
   minLength={8}
   value={password}
   onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white placeholder-gray-400"
+                    placeholder="••••••••••••"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                    Confirmer le mot de passe
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white placeholder-gray-400"
                     placeholder="••••••••••••"
                   />

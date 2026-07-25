@@ -1,24 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
-import { Check, Shield, Cloud, FileText } from 'lucide-react';
+import { Truck, Users, FileText, Package, DollarSign, BarChart3 } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  useEffect(() => {
-    async function verifierSession() {
-      const { data } = await supabase.auth.getSession();
-
-      if (data.session) {
-        window.location.href = "/dashboard";
-      }
-    }
-
-    verifierSession();
-  }, []);
+  const router = useRouter();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +34,7 @@ export default function LoginPage() {
       // Récupérer le profil de l'utilisateur dans la table profils
       const { data: profil, error: profilError } = await supabase
         .from('profils')
-        .select('role')
+        .select('id, nom, role, entreprise_id')
         .eq('id', user.id)
         .single();
 
@@ -58,12 +48,33 @@ export default function LoginPage() {
         throw new Error("Aucun profil utilisateur trouvé. Veuillez contacter l'administrateur.");
       }
 
+      // Vérifier que l'entreprise existe et a des informations complètes
+      const { data: entreprise, error: entrepriseError } = await supabase
+        .from('entreprises')
+        .select('adresse, telephone')
+        .eq('id', profil.entreprise_id)
+        .single();
+
+      if (entrepriseError || !entreprise) {
+        throw new Error("Entreprise introuvable pour cet utilisateur.");
+      }
+
+      const companyIncomplete = !entreprise.adresse?.trim() || !entreprise.telephone?.trim();
+
+      if (companyIncomplete) {
+        // Redirection vers paramètres pour compléter les informations obligatoires
+        router.replace('/parametres?complete=1');
+        router.refresh();
+        return;
+      }
+
       // Redirection selon le rôle
       if (profil.role === "super_admin") {
-        window.location.href = "/admin";
+        router.replace('/admin');
       } else {
-        window.location.href = "/dashboard";
+        router.replace('/dashboard');
       }
+      router.refresh();
 
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Une erreur est survenue lors de la connexion');
@@ -73,58 +84,55 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          {/* Left column - Marketing */}
-          <div className="text-white py-12 lg:py-0">
-            <div className="mb-8">
-              <span className="text-3xl font-bold text-white">TRANSPORT</span>
+    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-6 lg:gap-8 items-center">
+          {/* Left column - Hero premium compact */}
+          <div className="text-white py-6 lg:py-0">
+            <div className="mb-4">
+              <span className="text-3xl font-bold text-white">Transport</span>
               <span className="text-3xl font-bold text-green-500">ERP</span>
             </div>
 
-            <h1 className="text-4xl lg:text-5xl font-bold mb-6">
-              Connectez-vous à votre espace
+            <h1 className="text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 leading-tight">
+              <span className="text-white">Toute votre activité transport.</span><br />
+              <span className="text-green-400">Une seule interface.</span>
             </h1>
 
-            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-              Votre essai gratuit de 30 jours vous attend.
+            <p className="text-base text-gray-200 mb-2 max-w-xl">
+              Pilotez vos devis, chauffeurs, véhicules, livraisons, facturation et rentabilité depuis une seule plateforme.
             </p>
 
-            <div className="space-y-3 text-gray-300 mb-8">
-              <div className="flex items-center">
-                <Check className="w-5 h-5 text-green-500 mr-3" />
-                <span>Sans carte bancaire</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-5 h-5 text-green-500 mr-3" />
-                <span>Sans engagement</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-5 h-5 text-green-500 mr-3" />
-                <span>Résiliable à tout moment</span>
-          </div>
-          </div>
-        
+            {/* Image hero premium - visible immédiatement */}
+            <div className="relative mb-3 rounded-xl overflow-hidden shadow-lg h-64 lg:h-72">
+              <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent z-10"></div>
+              <div className="absolute inset-0 bg-[url('/image/login-transport-hero.png')] bg-cover bg-[center_right_85%]"></div>
+            </div>
 
-            <div className="space-y-2 text-sm text-gray-400">
-              <div className="flex items-center">
-                <Shield className="w-4 h-4 text-green-500 mr-2" />
-                <span>Développé pour les transporteurs français</span>
-              </div>
-              <div className="flex items-center">
-                <Cloud className="w-4 h-4 text-green-500 mr-2" />
-                <span>Hébergement sécurisé</span>
-              </div>
-              <div className="flex items-center">
-                <FileText className="w-4 h-4 text-green-500 mr-2" />
-                <span>CMR et bons de transport intégrés</span>
+            {/* Badges de modules compacts */}
+            <div className="mb-2">
+              <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
+                {[
+                  { icon: Truck, label: "Véhicules" },
+                  { icon: Users, label: "Chauffeurs" },
+                  { icon: FileText, label: "Devis" },
+                  { icon: Package, label: "Livraisons" },
+                  { icon: DollarSign, label: "Facturation" },
+                  { icon: BarChart3, label: "Rentabilité" }
+                ].map((item, index) => (
+                  <div key={index} className="flex flex-col items-center p-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                    <div className="w-6 h-6 flex items-center justify-center mb-1">
+                      <item.icon className="w-4 h-4 text-green-400" />
+                    </div>
+                    <span className="text-xs text-gray-300 text-center font-medium">{item.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Right column - Form */}
-          <div className="bg-gray-800 rounded-2xl p-8 shadow-2xl">
+          {/* Right column - Form (inchangé) */}
+          <div className="bg-gray-800 rounded-2xl p-6 lg:p-8 shadow-2xl">
             <h2 className="text-2xl font-bold text-white text-center mb-2">
               Accéder à mon compte
             </h2>
