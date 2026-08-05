@@ -2,26 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { Truck, Users, FileText, Package, DollarSign, BarChart3 } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+  const supabase = createClient();
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+    async function handleLogin(e: React.FormEvent) {
+      e.preventDefault();
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+      if (error) {
+        alert(error.message);
+        return;
+      }
 
     try {
       // Récupérer l'utilisateur connecté
@@ -98,7 +99,7 @@ export default function LoginPage() {
               <span className="text-white">Toute votre activité transport.</span><br />
               <span className="text-green-400">Une seule interface.</span>
             </h1>
-
+ 
             <p className="text-base text-gray-200 mb-2 max-w-xl">
               Pilotez vos devis, chauffeurs, véhicules, livraisons, facturation et rentabilité depuis une seule plateforme.
             </p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "../../../lib/supabase";
+import { createClient } from "../../../lib/supabase/client";
 
 export default function NouveauCamionPage() {
   const [immatriculation, setImmatriculation] = useState("");
@@ -12,11 +12,17 @@ export default function NouveauCamionPage() {
   async function ajouterCamion(e: React.FormEvent) {
     e.preventDefault();
 
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData.session?.user.id;
+    const supabase = createClient();
 
-    if (!userId) {
-      alert("Utilisateur non connecté");
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    const userId = user?.id;
+
+    if (userError || !userId) {
+      alert("Erreur d'authentification: " + (userError?.message || "Utilisateur non connecté"));
       return;
     }
 

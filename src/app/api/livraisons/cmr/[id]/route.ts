@@ -1,19 +1,44 @@
-import { supabase } from "../../../../../lib/supabase";
+import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseProxyClient } from "../../../../../lib/supabase/proxy";
 import { getCompanyParams, getLogoBuffer } from "../../../../../lib/getCompanyParams";
 
 export const runtime = "nodejs";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+
+  // Create Supabase client using the same proxy mechanism as subscription route
+  const { supabase, getResponse } = createSupabaseProxyClient(request);
+
+  // Check user authentication using getUser() for server-side routes
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return new Response("Non autorisé", { status: 401 });
+  }
+
+    // Get user profile to get entreprise_id
+    const { data: profil, error: profilError } = await supabase
+      .from("profils")
+      .select("entreprise_id")
+      .eq("id", user.id)
+      .single();
+
+  if (profilError || !profil?.entreprise_id) {
+    return new Response("Profil utilisateur introuvable", { status: 401 });
+  }
+
   const { default: PDFDocument } = await import("pdfkit");
 
+  // Load delivery with enterprise filter
   const { data: livraison, error } = await supabase
     .from("livraisons")
     .select("*")
     .eq("id", id)
+    .eq("entreprise_id", profil.entreprise_id)
     .single();
 
   if (error || !livraison) {
@@ -21,7 +46,7 @@ export async function GET(
   }
 
   const { data: chauffeur } = await supabase
-    .from("Chauffeurs")
+    .from("chauffeurs")
     .select("nom")
     .eq("id", livraison.chauffeur_id)
     .single();

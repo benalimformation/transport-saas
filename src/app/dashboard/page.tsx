@@ -44,11 +44,15 @@ export default function DashboardPage() {
   }, []);
 
   async function initialiserDashboard() {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData.session?.user.id;
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (!userId) {
-      window.location.href = "/login";
+    const userId = user?.id;
+
+    if (userError || !userId) {
+      console.error("Session utilisateur non disponible. Le proxy gère l'authentification.");
       return;
     }
 

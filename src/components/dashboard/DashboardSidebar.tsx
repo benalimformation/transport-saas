@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Home, Truck, Users, FileText, Package, CreditCard, BarChart, Settings, LogOut, ChevronRight, Briefcase, Cloud } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { createClient } from '../../lib/supabase/client';
+
+const supabase = createClient();
 
 interface NavItem {
   icon: any;

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../../lib/supabase";
+import { createClient } from "../../../lib/supabase/client";
 
 export default function NouveauClientPage() {
   const router = useRouter();
@@ -16,13 +16,19 @@ export default function NouveauClientPage() {
   async function creerClient(e: React.FormEvent) {
     e.preventDefault();
 
- const { data: sessionData } = await supabase.auth.getSession();
-const userId = sessionData.session?.user.id;
+  const supabase = createClient();
 
-if (!userId) {
-  alert("Utilisateur non connecté");
-  return;
-}
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  const userId = user?.id;
+
+  if (userError || !userId) {
+    alert("Erreur d'authentification: " + (userError?.message || "Utilisateur non connecté"));
+    return;
+  }
 
 const { data: profil, error: profilError } = await supabase
   .from("profils")

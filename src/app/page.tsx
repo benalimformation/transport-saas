@@ -333,19 +333,15 @@ export default function Home() {
           <div className="relative">
             <div className="overflow-hidden">
               <div className="flex transition-transform duration-300 ease-in-out" style={{ transform: `translateX(-${activeSlide * 100}%)` }}>
-                {slides.map((slide, index) => (
-                  <div key={slide.title} className="w-full flex-shrink-0 px-4">
-                    {index === 1 ? (
-                      {/*<ClientsDemo />*/}
-                    ) : (
-                      <ScreenPlaceholder
-                        title={slide.title}
-                        subtitle={slide.subtitle}
-                        height="300px"
-                      />
-                    )}
-                  </div>
-                ))}
+                 {slides.map((slide, index) => (
+                   <div key={slide.title} className="w-full flex-shrink-0 px-4">
+                     <ScreenPlaceholder
+                       title={slide.title}
+                       subtitle={slide.subtitle}
+                       height="300px"
+                     />
+                   </div>
+                 ))}
               </div>
             </div>
             <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-50 z-10">

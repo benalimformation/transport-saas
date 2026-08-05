@@ -24,7 +24,7 @@ export async function GET(
   date_signature: livraison.date_signature,
 });
   const { data: chauffeur } = await supabase
-  .from("Chauffeurs")
+  .from("chauffeurs")
   .select("nom")
   .eq("id", livraison.chauffeur_id)
   .single();

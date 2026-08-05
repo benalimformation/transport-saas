@@ -83,7 +83,7 @@ const [prixTTC, setPrixTTC] = useState(0);
       .order("nom", { ascending: true });
 
     const { data: chauffeursData } = await supabase
-      .from("Chauffeurs")
+      .from("chauffeurs")
       .select("id, nom")
       .eq("entreprise_id", idEntreprise)
       .order("nom", { ascending: true });
@@ -147,14 +147,14 @@ setPrixTTC(data.prix_ttc || 0);
 
     const { error } = await supabase.from("livraisons").insert([
       {
-        client_id: clientId,
+        client_id: clientId || null,
         client: clientSelectionne?.nom || "",
         adresse_depart: adresseDepart,
         adresse_arrivee: adresseArrivee,
-        chauffeur_id: chauffeurId,
-        camion_id: camionId,
-        date_livraison: dateLivraison,
-        heure_limite: heureLimite,
+        chauffeur_id: chauffeurId || null,
+        camion_id: camionId || null,
+        date_livraison: dateLivraison || null,
+        heure_limite: heureLimite || null,
         statut,
         entreprise_id: entrepriseId,
         prix_ht: prixHT,
@@ -223,7 +223,6 @@ setPrixTTC(data.prix_ttc || 0);
           value={chauffeurId}
           onChange={(e) => setChauffeurId(e.target.value)}
           className="w-full rounded bg-gray-800 p-3"
-          required
         >
           <option value="">Choisir un chauffeur</option>
           {chauffeurs.map((chauffeur) => (
@@ -237,7 +236,6 @@ setPrixTTC(data.prix_ttc || 0);
           value={camionId}
           onChange={(e) => setCamionId(e.target.value)}
           className="w-full rounded bg-gray-800 p-3"
-          required
         >
           <option value="">Choisir un camion</option>
           {camions.map((camion) => (

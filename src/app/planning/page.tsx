@@ -29,7 +29,7 @@ export default function PlanningPage() {
 
   async function chargerPlanning() {
     const { data: chauffeursData, error: chauffeursError } = await supabase
-      .from("Chauffeurs")
+      .from("chauffeurs")
       .select("id, nom")
       .order("nom", { ascending: true });
 

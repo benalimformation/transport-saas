@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { isAuthorized } from "../../lib/permissions";
 
@@ -14,12 +14,39 @@ interface Entreprise {
   email: string;
 }
 
+/**
+ * Composant principal avec Suspense boundary pour useSearchParams
+ */
 export default function ParametresPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const completeParam = searchParams.get('complete');
-  const isCompleteFlow = completeParam === '1';
+  return (
+    <Suspense fallback={<ParametresPageLoading />}>
+      <ParametresPageContent />
+    </Suspense>
+  );
+}
 
+/**
+ * Affichage de chargement pendant le suspense
+ */
+function ParametresPageLoading() {
+  return (
+    <main className="min-h-screen bg-gray-950 p-10 text-white">
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="mb-4 text-2xl">Chargement...</div>
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/**
+ * Contenu principal de la page paramètres
+ * Ce composant utilise useSearchParams qui nécessite Suspense
+ */
+function ParametresPageContent() {
+  const router = useRouter();
   const [settings, setSettings] = useState<Entreprise>({
     nom: "",
     adresse: "",
@@ -110,7 +137,7 @@ export default function ParametresPage() {
     const telephoneNettoye = settings.telephone.trim();
 
     if (!adresseNettoyee || !telephoneNettoye) {
-      setError("L’adresse et le téléphone sont obligatoires.");
+      setError("L'adresse et le téléphone sont obligatoires.");
       return;
     }
 
@@ -137,17 +164,14 @@ export default function ParametresPage() {
       }
 
       if (!updatedEntreprise?.id) {
-        throw new Error("Aucune entreprise n’a été mise à jour.");
+        throw new Error("Aucune entreprise n'a été mise à jour.");
       }
 
       setSuccess("Paramètres enregistrés avec succès!");
-      setTimeout(() => setSuccess(null), 3000);
+      setTimeout(() => setSuccess(null), blockingSettingsTimeout);
 
-      // Si c'était un flux de complétion, rediriger vers le dashboard
-      if (isCompleteFlow) {
-        router.replace('/dashboard');
-        router.refresh();
-      }
+      // Rediriger vers le dashboard après succès
+      router.replace('/dashboard');
 
     } catch (err) {
       setError("Erreur lors de l'enregistrement: " + (err as Error).message);
@@ -156,21 +180,14 @@ export default function ParametresPage() {
     }
   }
 
+  const blockingSettingsTimeout = 3000; // 3 secondes
+
   function handleChange(field: string, value: string | number) {
     setSettings(prev => ({ ...prev, [field]: value }));
   }
 
   if (loading) {
-    return (
-      <main className="min-h-screen bg-gray-950 p-10 text-white">
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="mb-4 text-2xl">Chargement...</div>
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          </div>
-        </div>
-      </main>
-    );
+    return <ParametresPageLoading />;
   }
 
   return (
@@ -178,11 +195,9 @@ export default function ParametresPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold">Paramètres de l'entreprise</h1>
-          {!isCompleteFlow && (
-            <a href="/dashboard" className="rounded bg-gray-700 px-4 py-2 hover:bg-gray-600">
-              ← Retour Dashboard
-            </a>
-          )}
+          <a href="/dashboard" className="rounded bg-gray-700 px-4 py-2 hover:bg-gray-600">
+            ← Retour Dashboard
+          </a>
         </div>
 
         {error && (

@@ -67,7 +67,7 @@ export default function ChauffeursPage() {
 
     try {
       const { data, error } = await supabase
-        .from("Chauffeurs")
+        .from("chauffeurs")
         .select("*")
         .eq("entreprise_id", idEntreprise)
         .order("nom", { ascending: true });
@@ -89,7 +89,7 @@ export default function ChauffeursPage() {
 
     try {
       const { error } = await supabase
-        .from("Chauffeurs")
+        .from("chauffeurs")
         .delete()
         .eq("id", id)
         .eq("entreprise_id", entrepriseId);

@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -15,7 +15,7 @@ export default function ModifierChauffeurPage() {
 
   async function chargerChauffeur() {
     const { data, error } = await supabase
-      .from("Chauffeurs")
+      .from("chauffeurs")
       .select("*")
       .eq("id", id)
       .single();
@@ -33,7 +33,7 @@ export default function ModifierChauffeurPage() {
 
   async function modifierChauffeur() {
     const { error } = await supabase
-      .from("Chauffeurs")
+      .from("chauffeurs")
       .update({
         nom,
         telephone,

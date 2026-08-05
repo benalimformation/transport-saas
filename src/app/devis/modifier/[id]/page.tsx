@@ -50,16 +50,22 @@ export default function ModifierDevisPage() {
       return;
     }
 
-    setEntrepriseId(profil.entreprise_id);
-    await chargerDevis();
+    const entrepriseIdValue = profil.entreprise_id;
+    setEntrepriseId(entrepriseIdValue);
+    await chargerDevis(entrepriseIdValue);
   }
 
-  async function chargerDevis() {
+  async function chargerDevis(entrepriseIdValue: string) {
+    if (!entrepriseIdValue) {
+      alert("Entreprise introuvable.");
+      return;
+    }
+
     const { data, error } = await supabase
       .from("devis")
       .select("*")
       .eq("id", id)
-      .eq("entreprise_id", entrepriseId)
+      .eq("entreprise_id", entrepriseIdValue)
       .single();
 
     if (error || !data) {

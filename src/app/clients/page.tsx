@@ -124,7 +124,19 @@ export default function ClientsPage() {
       </a>
 
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-        {clients.length === 0 ? (
+        {error ? (
+          <div className="text-center py-12">
+            <div className="mb-4 text-6xl">❌</div>
+            <h3 className="text-xl font-bold mb-2 text-red-400">Erreur</h3>
+            <p className="text-gray-400 mb-6">{error}</p>
+          </div>
+        ) : loading ? (
+          <div className="text-center py-12">
+            <div className="mb-4 text-6xl">⏳</div>
+            <h3 className="text-xl font-bold mb-2">Chargement...</h3>
+            <p className="text-gray-400 mb-6">Récupération des clients en cours.</p>
+          </div>
+        ) : clients.length === 0 ? (
           <div className="text-center py-12">
             <div className="mb-4 text-6xl">👥</div>
             <h3 className="text-xl font-bold mb-2">Aucun client enregistré</h3>

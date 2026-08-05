@@ -94,7 +94,7 @@ export default function LivraisonsPage() {
     }
 
     const { data: chauffeursData, error: chauffeursError } = await supabase
-      .from("Chauffeurs")
+      .from("chauffeurs")
       .select("id, nom")
       .eq("entreprise_id", idEntreprise);
 

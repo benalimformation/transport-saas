@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Search, Bell, Cloud, ChevronDown, User, LoaderCircle, CircleAlert, Sun, Moon, CloudSun, CloudMoon, CloudFog, CloudDrizzle, CloudRain, CloudSnow, CloudLightning } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
+
+const supabase = createClient();
 
 // Fonction de traduction des rôles
 const translateRole = (role: string | null): string => {
