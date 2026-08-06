@@ -140,15 +140,37 @@ export function calculateTrialRemainingDays(
       return null;
     }
     
-    const diffMs = endDate.getTime() - referenceDate.getTime();
+    // Normaliser les dates au début de journée UTC pour calculer en jours calendaires
+    const startOfReferenceDay = new Date(Date.UTC(
+      referenceDate.getUTCFullYear(),
+      referenceDate.getUTCMonth(),
+      referenceDate.getUTCDate()
+    ));
+    
+    const startOfEndDay = new Date(Date.UTC(
+      endDate.getUTCFullYear(),
+      endDate.getUTCMonth(),
+      endDate.getUTCDate()
+    ));
+    
+    const diffMs = startOfEndDay.getTime() - startOfReferenceDay.getTime();
     
     // Si la date est déjà passée, retourner 0
     if (diffMs <= 0) {
       return 0;
     }
     
-    // Calcul des jours (arrondi au supérieur)
-    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    // Calcul des jours calendaires (arrondi au supérieur)
+    const fullDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    
+    // Cas spécial: si l'essai se termine aujourd'hui (même jour calendaire)
+    // mais n'est pas encore expiré (diffMs > 0), retourner 1 jour restant
+    // car l'utilisateur voit "1 jour restant" jusqu'à minuit
+    if (fullDays === 0 && diffMs > 0) {
+      return 1;
+    }
+    
+    return fullDays;
   } catch {
     return null;
   }
@@ -224,12 +246,30 @@ export function evaluateSubscription(
 
   // 4. Calcul des jours restants d'essai
   const trialRemainingDays = calculateTrialRemainingDays(trialEndsAt, referenceDate);
+  
+  // Gestion spéciale pour date invalide
+  if (trialRemainingDays === null) {
+    // Date invalide détectée par calculateTrialRemainingDays
+    return {
+      authorized: false,
+      reason: 'invalid_trial',
+      subscriptionStatus: 'trialing',
+      role,
+      entrepriseId,
+      trialStartedAt,
+      trialEndsAt,
+      trialRemainingDays: null,
+      trialExpired: false,
+      hasValidSubscription: false
+    };
+  }
+  
   const trialExpired = trialRemainingDays === 0;
 
   // 5. Logique d'autorisation principale stricte selon spécifications
   switch (subscriptionStatus) {
     case 'trialing':
-      if (trialRemainingDays !== null && trialRemainingDays > 0) {
+      if (trialRemainingDays > 0) {
         // Essai valide - vérification des dates supplémentaires
         const endDate = new Date(trialEndsAt);
         if (isNaN(endDate.getTime())) {
@@ -261,7 +301,7 @@ export function evaluateSubscription(
           hasValidSubscription: true
         };
       } else {
-        // Essai expiré ou date invalide
+        // Essai expiré (trialRemainingDays === 0)
         return {
           authorized: false,
           reason: 'trial_expired',
@@ -270,7 +310,7 @@ export function evaluateSubscription(
           entrepriseId,
           trialStartedAt,
           trialEndsAt,
-          trialRemainingDays: trialRemainingDays || 0,
+          trialRemainingDays: 0,
           trialExpired: true,
           hasValidSubscription: false
         };

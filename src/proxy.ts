@@ -106,6 +106,17 @@ export async function proxy(request: NextRequest) {
     // 4. Vérifier l'accès aux ressources via le service centralisé
     const access = await getSubscriptionAccess({ supabase, userId })
 
+    // Stocker les informations d'abonnement dans les headers pour les composants serveur
+    // (préparation pour la mission Stripe - pas de redirection supprimée)
+    const responseWithHeaders = supabaseResponse.clone()
+    responseWithHeaders.headers.set('x-subscription-authorized', access.authorized.toString())
+    responseWithHeaders.headers.set('x-subscription-reason', access.reason)
+    responseWithHeaders.headers.set('x-subscription-status', access.subscriptionStatus)
+    responseWithHeaders.headers.set('x-subscription-entreprise-id', access.entrepriseId || '')
+    responseWithHeaders.headers.set('x-subscription-trial-remaining-days', access.trialRemainingDays?.toString() || '')
+    responseWithHeaders.headers.set('x-subscription-trial-expired', access.trialExpired.toString())
+    responseWithHeaders.headers.set('x-subscription-has-valid-subscription', access.hasValidSubscription.toString())
+
     // 5. Si accès refusé
     if (!access.authorized) {
       // Pour les pages, rediriger vers /abonnement
