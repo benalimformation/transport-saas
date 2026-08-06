@@ -2,64 +2,110 @@
 -- Date: 2026-07-26
 -- Description: Adds columns required for Stripe subscription management to the entreprises table
 --              including trial period tracking and subscription status.
+--              This migration is deterministic and safe for existing data.
 
 BEGIN;
 
 -- Add subscription-related columns to entreprises table
--- All columns except subscription_status accept NULL values
 ALTER TABLE public.entreprises
-  ADD COLUMN IF NOT EXISTS trial_started_at TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'trialing',
-  ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT,
-  ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT,
-  ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ;
+  ADD COLUMN trial_started_at TIMESTAMPTZ,
+  ADD COLUMN trial_ends_at TIMESTAMPTZ,
+  ADD COLUMN subscription_status TEXT DEFAULT 'trialing',
+  ADD COLUMN stripe_customer_id TEXT,
+  ADD COLUMN stripe_subscription_id TEXT,
+  ADD COLUMN current_period_end TIMESTAMPTZ,
+  ADD COLUMN trial_used BOOLEAN DEFAULT FALSE;
 
 -- Drop existing constraint if it exists (from previous migration attempts)
 ALTER TABLE public.entreprises
   DROP CONSTRAINT IF EXISTS check_subscription_status_new;
 
 -- Add CHECK constraint for subscription_status values
--- Values match the STRIPE_SUBSCRIPTION_STATUSES defined in src/lib/stripe/config.ts
+-- Includes all official Stripe subscription statuses plus internal 'expired' status
 ALTER TABLE public.entreprises
   ADD CONSTRAINT check_subscription_status_new
   CHECK (
     subscription_status IN (
-      'trialing',   -- Trial period active (Stripe: trialing)
-      'active',     -- Subscription active and paid
-      'past_due',   -- Payment failed, subscription still active but past due
-      'canceled',   -- Subscription canceled (Stripe: canceled)
-      'expired'    -- Trial or subscription expired
+      -- Official Stripe subscription statuses
+      'incomplete',
+      'incomplete_expired',
+      'trialing',
+      'active',
+      'past_due',
+      'canceled',
+      'unpaid',
+      'paused',
+      -- Internal TransportERP status for expired trial without active subscription
+      'expired'
     )
   );
 
+-- Initialize existing rows with deterministic values
+-- For companies that already have data, preserve existing values
+-- For new columns with NULL values, set appropriate defaults
+UPDATE public.entreprises
+SET
+  trial_started_at = COALESCE(trial_started_at, NOW()),
+  trial_ends_at = COALESCE(trial_ends_at,
+    COALESCE(trial_started_at, NOW()) + INTERVAL '30 days'),
+  subscription_status = COALESCE(subscription_status, 'trialing'),
+  trial_used = (COALESCE(trial_ends_at,
+    COALESCE(trial_started_at, NOW()) + INTERVAL '30 days') < NOW())
+WHERE
+  trial_started_at IS NULL OR
+  trial_ends_at IS NULL OR
+  subscription_status IS NULL OR
+  trial_used IS NULL;
+
+-- Now that all rows have values, add NOT NULL constraints
+ALTER TABLE public.entreprises
+  ALTER COLUMN trial_started_at SET NOT NULL,
+  ALTER COLUMN trial_ends_at SET NOT NULL,
+  ALTER COLUMN subscription_status SET NOT NULL,
+  ALTER COLUMN trial_used SET NOT NULL;
+
+-- Set defaults for future insertions
+ALTER TABLE public.entreprises
+  ALTER COLUMN trial_started_at SET DEFAULT NOW(),
+  ALTER COLUMN trial_ends_at SET DEFAULT (NOW() + INTERVAL '30 days'),
+  ALTER COLUMN subscription_status SET DEFAULT 'trialing',
+  ALTER COLUMN trial_used SET DEFAULT FALSE;
+
+-- Add constraint to ensure trial period is valid
+ALTER TABLE public.entreprises
+  DROP CONSTRAINT IF EXISTS check_entreprises_trial_period;
+
+ALTER TABLE public.entreprises
+  ADD CONSTRAINT check_entreprises_trial_period
+  CHECK (trial_ends_at > trial_started_at);
+
 -- Create unique partial indexes for Stripe IDs (ignore NULL values)
 -- These indexes ensure uniqueness only when the IDs are present
-CREATE UNIQUE INDEX IF NOT EXISTS idx_entreprises_stripe_customer_id_unique
+CREATE UNIQUE INDEX idx_entreprises_stripe_customer_id_unique
 ON public.entreprises (stripe_customer_id)
 WHERE stripe_customer_id IS NOT NULL;
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_entreprises_stripe_subscription_id_unique
+CREATE UNIQUE INDEX idx_entreprises_stripe_subscription_id_unique
 ON public.entreprises (stripe_subscription_id)
 WHERE stripe_subscription_id IS NOT NULL;
 
 -- Create non-unique index for subscription_status for faster filtering
-CREATE INDEX IF NOT EXISTS idx_entreprises_subscription_status
+CREATE INDEX idx_entreprises_subscription_status
 ON public.entreprises (subscription_status);
 
 -- Create index for trial_ends_at for efficient trial expiration queries
-CREATE INDEX IF NOT EXISTS idx_entreprises_trial_ends_at
+CREATE INDEX idx_entreprises_trial_ends_at
 ON public.entreprises (trial_ends_at);
 
 -- Add comments for documentation
 COMMENT ON COLUMN public.entreprises.trial_started_at IS
-'Timestamp when the 30-day free trial started. Automatically set on company creation.';
+'Timestamp when the 30-day free trial started. Automatically set to NOW() on company creation.';
 
 COMMENT ON COLUMN public.entreprises.trial_ends_at IS
-'Timestamp when the 30-day free trial ends. Calculated as trial_started_at + 30 days.';
+'Timestamp when the 30-day free trial ends. Always exactly 30 days after trial_started_at.';
 
 COMMENT ON COLUMN public.entreprises.subscription_status IS
-'Current subscription status. Values: trialing, active, past_due, canceled, expired.';
+'Current subscription status. Values: incomplete, incomplete_expired, trialing, active, past_due, canceled, unpaid, paused (Stripe statuses) plus expired (internal TransportERP status).';
 
 COMMENT ON COLUMN public.entreprises.stripe_customer_id IS
 'Stripe customer ID. Populated when the company creates a Stripe customer.';
@@ -69,5 +115,8 @@ COMMENT ON COLUMN public.entreprises.stripe_subscription_id IS
 
 COMMENT ON COLUMN public.entreprises.current_period_end IS
 'Timestamp for the end of the current billing period for active subscriptions.';
+
+COMMENT ON COLUMN public.entreprises.trial_used IS
+'Indicates whether the company has already used its 30-day free trial (TRUE if trial_ends_at is in the past).';
 
 COMMIT;
