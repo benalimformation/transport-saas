@@ -39,3 +39,41 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# QA reports and temporary files
+# Rapports QA
+rapport-*
+validation-rapport*
+analyse_*
+rapport-*
+
+# Build results
+build_results*
+build_output*
+build_final*
+
+# Vitest results
+vitest_results*
+vitest_final*
+
+# Dumps
+schema_dump*
+
+# Temp files
+temp.hex
+resultat-test-admin-key*
+pdf-test-results*
+qa-*
+
+# Scripts QA temporaires
+test-login.js
+check_*.js
+analyse_*.js
+audit_*.js
+fix_*.js
+migration_*.js
+
+# Extraction reports
+extraction-rapport*
+contradiction-analysis*
+existence-report*
