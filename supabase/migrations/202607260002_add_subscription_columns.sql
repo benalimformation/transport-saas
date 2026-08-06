@@ -14,7 +14,7 @@ ALTER TABLE public.entreprises
   ADD COLUMN stripe_customer_id TEXT,
   ADD COLUMN stripe_subscription_id TEXT,
   ADD COLUMN current_period_end TIMESTAMPTZ,
-  ADD COLUMN trial_used BOOLEAN DEFAULT FALSE;
+  ADD COLUMN trial_used BOOLEAN DEFAULT TRUE;
 
 -- Drop existing constraint if it exists (from previous migration attempts)
 ALTER TABLE public.entreprises
@@ -49,8 +49,7 @@ SET
   trial_ends_at = COALESCE(trial_ends_at,
     COALESCE(trial_started_at, NOW()) + INTERVAL '30 days'),
   subscription_status = COALESCE(subscription_status, 'trialing'),
-  trial_used = (COALESCE(trial_ends_at,
-    COALESCE(trial_started_at, NOW()) + INTERVAL '30 days') < NOW())
+  trial_used = TRUE
 WHERE
   trial_started_at IS NULL OR
   trial_ends_at IS NULL OR
@@ -69,7 +68,7 @@ ALTER TABLE public.entreprises
   ALTER COLUMN trial_started_at SET DEFAULT NOW(),
   ALTER COLUMN trial_ends_at SET DEFAULT (NOW() + INTERVAL '30 days'),
   ALTER COLUMN subscription_status SET DEFAULT 'trialing',
-  ALTER COLUMN trial_used SET DEFAULT FALSE;
+  ALTER COLUMN trial_used SET DEFAULT TRUE;
 
 -- Add constraint to ensure trial period is valid
 ALTER TABLE public.entreprises
@@ -117,6 +116,6 @@ COMMENT ON COLUMN public.entreprises.current_period_end IS
 'Timestamp for the end of the current billing period for active subscriptions.';
 
 COMMENT ON COLUMN public.entreprises.trial_used IS
-'Indicates whether the company has already used its 30-day free trial (TRUE if trial_ends_at is in the past).';
+'Indicates whether the company has already started or benefited from its first 30-day free trial. TRUE for all existing companies after migration application.';
 
 COMMIT;
