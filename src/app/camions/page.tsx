@@ -24,8 +24,11 @@ export default function CamionsPage() {
   }, []);
 
   async function initialiserPage() {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData.session?.user.id;
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+const userId = user?.id;
 
     if (!userId) {
       window.location.href = "/login";
