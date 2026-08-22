@@ -21,7 +21,8 @@ const PUBLIC_ROUTES = [
   '/register',
   '/forgot-password',
   '/reset-password',
-  '/abonnement'
+  '/abonnement',
+  '/api/stripe/webhook'
 ]
 
 /**

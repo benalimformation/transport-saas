@@ -54,7 +54,7 @@ function AbonnementPageContent() {
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // useSearchParams doit être utilisé dans un composant enveloppé par Suspense
   const searchParams = useSearchParams();
   const reason = searchParams.get("reason");
@@ -138,7 +138,7 @@ function AbonnementPageContent() {
     if (status === "canceled") return "canceled";
     if (status === "expired") return "expired";
     if (status === "incomplete") return "incomplete";
-    
+
     return "unknown";
   }
 
@@ -300,6 +300,34 @@ function AbonnementPageContent() {
     return messages[reason] || "Accès refusé pour une raison inconnue.";
   }
 
+  async function handleOpenPortal() {
+    try {
+      const response = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(
+          data?.message ||
+          data?.error ||
+          "Erreur lors de l'ouverture du portail Stripe"
+        );
+        return;
+      }
+
+      if (data.url && typeof data.url === 'string') {
+        window.location.href = data.url;
+      } else {
+        alert('URL de portail invalide');
+      }
+    } catch (error) {
+      console.error('Erreur réseau:', error);
+      alert("Erreur réseau lors de l'ouverture du portail");
+    }
+  }
   if (loading) {
     return <AbonnementPageLoading />;
   }
@@ -324,8 +352,8 @@ function AbonnementPageContent() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <a 
-                href="/dashboard" 
+              <a
+                href="/dashboard"
                 className="text-gray-600 hover:text-gray-900 text-sm font-medium"
               >
                 Retour au dashboard
@@ -369,7 +397,7 @@ function AbonnementPageContent() {
                 <p className="text-gray-700 mb-4 max-w-2xl">
                   {statusConfig.description}
                 </p>
-                
+
                 {/* Jours restants d'essai */}
                 {statusConfig.showDaysRemaining && subscriptionData?.trialRemainingDays !== null && (
                   <div className="flex items-center space-x-2">
@@ -498,8 +526,7 @@ function AbonnementPageContent() {
                    </button>
                  </div>
                )}
-REPLACE
-              
+
               {statusConfig.showContactButton && (
                 <button
                   onClick={() => window.location.href = "mailto:support@transporterp.com"}
@@ -508,13 +535,22 @@ REPLACE
                   Contacter le support
                 </button>
               )}
+              {subscriptionData?.hasValidSubscription ? (
+                <button
+                  onClick={handleOpenPortal}
+                  className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-md font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Gérer mon abonnement
+                </button>
+              ) : (
+                <button
+                  onClick={loadSubscriptionData}
+                  className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-md font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Actualiser les informations
+                </button>
+              )}
 
-              <button
-                onClick={loadSubscriptionData}
-                className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-md font-medium hover:bg-gray-50 transition-colors"
-              >
-                Actualiser les informations
-              </button>
             </div>
           </div>
         </div>
@@ -540,7 +576,7 @@ REPLACE
                 </div>
               </div>
             </div>
-            
+
             <div>
               <h4 className="text-sm font-medium text-gray-500 mb-2">Informations de débogage</h4>
               <div className="space-y-1 text-sm">
@@ -568,7 +604,7 @@ REPLACE
             <div>
               <h4 className="font-semibold text-blue-900 mb-2">Information importante</h4>
               <p className="text-blue-700 mb-2">
-                Le système de paiement Stripe n'est pas encore intégré. Cette page affiche l'état théorique 
+                Le système de paiement Stripe n'est pas encore intégré. Cette page affiche l'état théorique
                 de votre abonnement basé sur les données enregistrées dans la base de données.
               </p>
               <p className="text-blue-600 text-sm">

@@ -21,3 +21,23 @@ export function getStripePriceIds(): { monthly: string; annual: string } {
     annual,
   };
 }
+
+export function getStripePriceId(plan: "monthly" | "annual"): string {
+  if (plan === "monthly") {
+    const monthly = process.env.STRIPE_PRICE_MONTHLY_ID;
+
+    if (!monthly) {
+      throw new Error("Missing STRIPE_PRICE_MONTHLY_ID");
+    }
+
+    return monthly;
+  }
+
+  const annual = process.env.STRIPE_PRICE_ANNUAL_ID;
+
+  if (!annual) {
+    throw new Error("Missing STRIPE_PRICE_ANNUAL_ID");
+  }
+
+  return annual;
+}

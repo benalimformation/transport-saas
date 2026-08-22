@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseProxyClient } from '../../../../lib/supabase/proxy';
 import { getStripeClient } from '../../../../lib/stripe';
-import { getStripePriceIds } from '../../../../lib/stripe/config';
+import { getStripePriceId } from '../../../../lib/stripe/config';
 import { getStripeCustomerForEntreprise } from '../../../../lib/stripe/customer';
 
 /**
@@ -131,8 +131,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 9. Récupérer les Price IDs depuis la configuration
-    const priceIds = getStripePriceIds();
-    const priceId = plan === 'monthly' ? priceIds.monthly : priceIds.annual;
+    const priceId = getStripePriceId(plan);
 
     // 10. Initialiser le client Stripe
     const stripe = getStripeClient();
