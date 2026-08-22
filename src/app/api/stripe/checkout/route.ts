@@ -136,6 +136,38 @@ export async function POST(request: NextRequest) {
     // 10. Initialiser le client Stripe
     const stripe = getStripeClient();
 
+    // Vérifier qu'aucun abonnement Stripe existant ne doit bloquer un nouveau Checkout
+    const existingSubscriptions = await stripe.subscriptions.list({
+      customer: entreprise.stripe_customer_id,
+      status: 'all',
+      limit: 100,
+    });
+
+    const blockingStatuses = [
+      'trialing',
+      'active',
+      'past_due',
+      'unpaid',
+      'incomplete',
+      'paused',
+    ];
+
+    const hasBlockingSubscription = existingSubscriptions.data.some(
+      (subscription) => blockingStatuses.includes(subscription.status)
+    );
+
+    if (hasBlockingSubscription) {
+      return NextResponse.json(
+        {
+          error: 'Abonnement Stripe existant',
+          message:
+            'Un abonnement Stripe existe déjà pour cette entreprise. Gérez votre abonnement existant depuis le portail.',
+          reason: 'stripe_subscription_already_exists',
+        },
+        { status: 409 }
+      );
+    }
+
     // 11. Créer la session Checkout
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
