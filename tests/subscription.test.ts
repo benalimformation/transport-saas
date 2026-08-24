@@ -50,6 +50,7 @@ describe('Système d\'essai gratuit', () => {
       subscriptionStatus: 'trialing',
       trialStartedAt: new Date().toISOString(),
       trialEndsAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // +15 jours
+     cancelAt: null,
     };
 
     test('refuse l\'accès si le profil est manquant', () => {
@@ -226,6 +227,7 @@ describe('Système d\'essai gratuit', () => {
         subscriptionStatus: 'trialing',
         trialStartedAt: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(), // -1 jour
         trialEndsAt: trialEndsAt,
+        cancelAt: null,
       };
 
       const decision = evaluateSubscription(data);
@@ -244,6 +246,7 @@ describe('Système d\'essai gratuit', () => {
         subscriptionStatus: 'trialing',
         trialStartedAt: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(), // -1 jour
         trialEndsAt: trialEndsAt.toISOString(),
+        cancelAt: null,
       };
 
       const decision = evaluateSubscription(data);

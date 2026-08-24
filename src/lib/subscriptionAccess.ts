@@ -62,18 +62,21 @@ export type SubscriptionReason =
 export interface SubscriptionRawData {
   /** Rôle de l'utilisateur */
   role: Role | null;
-  
+
   /** ID de l'entreprise */
   entrepriseId: string | null;
-  
+
   /** Statut de l'abonnement (peut être null) */
   subscriptionStatus: SubscriptionStatus | null;
-  
+
   /** Date de début de l'essai (ISO string ou null) */
   trialStartedAt: string | null;
-  
+
   /** Date de fin de l'essai (ISO string ou null) */
   trialEndsAt: string | null;
+
+  /** Date de résiliation programmée (ISO string ou null) */
+  cancelAt: string | null;
 }
 
 /**
@@ -83,33 +86,36 @@ export interface SubscriptionRawData {
 export interface SubscriptionDecision {
   /** L'utilisateur est-il autorisé à accéder aux ressources ? */
   authorized: boolean;
-  
+
   /** Raison technique de la décision */
   reason: SubscriptionReason;
-  
+
   /** Statut actuel de l'abonnement */
   subscriptionStatus: SubscriptionStatus;
-  
+
   /** Rôle de l'utilisateur */
   role: Role | null;
-  
+
   /** ID de l'entreprise */
   entrepriseId: string | null;
-  
+
   /** Date de début de l'essai (ISO string) */
   trialStartedAt: string | null;
-  
+
   /** Date de fin de l'essai (ISO string) */
   trialEndsAt: string | null;
-  
+
   /** Nombre de jours restants dans l'essai (null si pas en période d'essai) */
   trialRemainingDays: number | null;
-  
+
   /** L'essai est-il expiré ? */
   trialExpired: boolean;
-  
+
   /** L'utilisateur dispose-t-il d'un accès valide (essai valide ou abonnement actif) ? */
   hasValidSubscription: boolean;
+
+  /** Date de résiliation programmée (ISO string ou null) */
+  cancelAt: string | null;
 }
 
 // ============================================================================
@@ -131,45 +137,45 @@ export function calculateTrialRemainingDays(
   if (!trialEndsAt) {
     return null;
   }
-  
+
   try {
     const endDate = new Date(trialEndsAt);
-    
+
     // Validation de la date
     if (isNaN(endDate.getTime())) {
       return null;
     }
-    
+
     // Normaliser les dates au début de journée UTC pour calculer en jours calendaires
     const startOfReferenceDay = new Date(Date.UTC(
       referenceDate.getUTCFullYear(),
       referenceDate.getUTCMonth(),
       referenceDate.getUTCDate()
     ));
-    
+
     const startOfEndDay = new Date(Date.UTC(
       endDate.getUTCFullYear(),
       endDate.getUTCMonth(),
       endDate.getUTCDate()
     ));
-    
+
     const diffMs = startOfEndDay.getTime() - startOfReferenceDay.getTime();
-    
+
     // Si la date est déjà passée, retourner 0
     if (diffMs <= 0) {
       return 0;
     }
-    
+
     // Calcul des jours calendaires (arrondi au supérieur)
     const fullDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    
+
     // Cas spécial: si l'essai se termine aujourd'hui (même jour calendaire)
     // mais n'est pas encore expiré (diffMs > 0), retourner 1 jour restant
     // car l'utilisateur voit "1 jour restant" jusqu'à minuit
     if (fullDays === 0 && diffMs > 0) {
       return 1;
     }
-    
+
     return fullDays;
   } catch {
     return null;
@@ -193,7 +199,8 @@ export function evaluateSubscription(
     entrepriseId,
     subscriptionStatus,
     trialStartedAt,
-    trialEndsAt
+    trialEndsAt,
+    cancelAt
   } = rawData;
 
   // 1. Validation des données minimales nécessaires
@@ -208,7 +215,8 @@ export function evaluateSubscription(
       trialEndsAt,
       trialRemainingDays: null,
       trialExpired: false,
-      hasValidSubscription: false
+      hasValidSubscription: false,
+      cancelAt: null,
     };
   }
 
@@ -224,7 +232,8 @@ export function evaluateSubscription(
       trialEndsAt,
       trialRemainingDays: null,
       trialExpired: false,
-      hasValidSubscription: true
+      hasValidSubscription: true,
+      cancelAt,
     };
   }
 
@@ -240,13 +249,14 @@ export function evaluateSubscription(
       trialEndsAt,
       trialRemainingDays: null,
       trialExpired: false,
-      hasValidSubscription: false
+      hasValidSubscription: false,
+      cancelAt,
     };
   }
 
   // 4. Calcul des jours restants d'essai
   const trialRemainingDays = calculateTrialRemainingDays(trialEndsAt, referenceDate);
-  
+
   // Gestion spéciale pour date invalide
   if (trialRemainingDays === null) {
     // Date invalide détectée par calculateTrialRemainingDays
@@ -260,10 +270,11 @@ export function evaluateSubscription(
       trialEndsAt,
       trialRemainingDays: null,
       trialExpired: false,
-      hasValidSubscription: false
+      hasValidSubscription: false,
+      cancelAt,
     };
   }
-  
+
   const trialExpired = trialRemainingDays === 0;
 
   // 5. Logique d'autorisation principale stricte selon spécifications
@@ -283,10 +294,11 @@ export function evaluateSubscription(
             trialEndsAt,
             trialRemainingDays: null,
             trialExpired: false,
-            hasValidSubscription: false
+            hasValidSubscription: false,
+            cancelAt,
           };
         }
-        
+
         // Essai valide
         return {
           authorized: true,
@@ -298,7 +310,8 @@ export function evaluateSubscription(
           trialEndsAt,
           trialRemainingDays,
           trialExpired: false,
-          hasValidSubscription: true
+          hasValidSubscription: true,
+          cancelAt,
         };
       } else {
         // Essai expiré (trialRemainingDays === 0)
@@ -312,7 +325,8 @@ export function evaluateSubscription(
           trialEndsAt,
           trialRemainingDays: 0,
           trialExpired: true,
-          hasValidSubscription: false
+          hasValidSubscription: false,
+          cancelAt,
         };
       }
 
@@ -328,7 +342,8 @@ export function evaluateSubscription(
         trialEndsAt,
         trialRemainingDays: null,
         trialExpired: false,
-        hasValidSubscription: true
+        hasValidSubscription: true,
+        cancelAt,
       };
 
     case 'past_due':
@@ -342,8 +357,10 @@ export function evaluateSubscription(
         trialEndsAt,
         trialRemainingDays: null,
         trialExpired: false,
-        hasValidSubscription: false
+        hasValidSubscription: false,
+        cancelAt,
       };
+
 
     case 'unpaid':
       return {
@@ -356,7 +373,8 @@ export function evaluateSubscription(
         trialEndsAt,
         trialRemainingDays: null,
         trialExpired: false,
-        hasValidSubscription: false
+        hasValidSubscription: false,
+        cancelAt,
       };
 
     case 'canceled':
@@ -370,7 +388,8 @@ export function evaluateSubscription(
         trialEndsAt,
         trialRemainingDays: null,
         trialExpired: false,
-        hasValidSubscription: false
+        hasValidSubscription: false,
+        cancelAt,
       };
 
     case 'expired':
@@ -384,7 +403,8 @@ export function evaluateSubscription(
         trialEndsAt,
         trialRemainingDays: null,
         trialExpired: false,
-        hasValidSubscription: false
+        hasValidSubscription: false,
+        cancelAt,
       };
 
     case 'incomplete':
@@ -398,7 +418,8 @@ export function evaluateSubscription(
         trialEndsAt,
         trialRemainingDays: null,
         trialExpired: false,
-        hasValidSubscription: false
+        hasValidSubscription: false,
+        cancelAt,
       };
 
     default:
@@ -413,7 +434,8 @@ export function evaluateSubscription(
         trialEndsAt,
         trialRemainingDays: null,
         trialExpired: false,
-        hasValidSubscription: false
+        hasValidSubscription: false,
+        cancelAt,
       };
   }
 }
@@ -459,7 +481,7 @@ export async function getSubscriptionAccess({
     // Validation des variables d'environnement (fail-safe)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
+
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error('Configuration Supabase manquante');
     }
@@ -482,14 +504,15 @@ export async function getSubscriptionAccess({
         trialEndsAt: null,
         trialRemainingDays: null,
         trialExpired: false,
-        hasValidSubscription: false
+        hasValidSubscription: false,
+        cancelAt: null,
       };
     }
 
     // 2. Récupérer les données d'abonnement de l'entreprise
     const { data: entreprise, error: entrepriseError } = await supabase
       .from('entreprises')
-      .select('trial_started_at, trial_ends_at, subscription_status')
+      .select('trial_started_at, trial_ends_at, subscription_status, cancel_at')
       .eq('id', profil.entreprise_id)
       .single();
 
@@ -504,7 +527,8 @@ export async function getSubscriptionAccess({
         trialEndsAt: null,
         trialRemainingDays: null,
         trialExpired: false,
-        hasValidSubscription: false
+        hasValidSubscription: false,
+        cancelAt: null,
       };
     }
 
@@ -514,7 +538,8 @@ export async function getSubscriptionAccess({
       entrepriseId: profil.entreprise_id,
       subscriptionStatus: (entreprise.subscription_status as SubscriptionStatus) || null,
       trialStartedAt: entreprise.trial_started_at,
-      trialEndsAt: entreprise.trial_ends_at
+      trialEndsAt: entreprise.trial_ends_at,
+      cancelAt: entreprise.cancel_at
     };
 
     // 4. Évaluation pure avec les données récupérées
@@ -522,7 +547,7 @@ export async function getSubscriptionAccess({
 
   } catch (error) {
     console.error('Erreur lors de la vérification d\'accès aux ressources:', error);
-    
+
     // Erreur inattendue = fail-safe (refus d'accès)
     return {
       authorized: false,
@@ -534,7 +559,8 @@ export async function getSubscriptionAccess({
       trialEndsAt: null,
       trialRemainingDays: null,
       trialExpired: false,
-      hasValidSubscription: false
+      hasValidSubscription: false,
+      cancelAt: null,
     };
   }
 }

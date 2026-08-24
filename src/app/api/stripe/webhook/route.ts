@@ -43,6 +43,9 @@ async function syncSubscription(subscription: Stripe.Subscription) {
     // Pour les versions récentes de l'API Stripe
     currentPeriodEnd = new Date(subscription.items.data[0].current_period_end * 1000);
   }
+  const cancelAt = subscription.cancel_at
+    ? new Date(subscription.cancel_at * 1000).toISOString()
+    : null;
 
   // Trouver l'entreprise correspondante
   const { data: entreprise, error } = await supabase
@@ -62,7 +65,8 @@ async function syncSubscription(subscription: Stripe.Subscription) {
     .update({
       stripe_subscription_id: subscriptionId,
       subscription_status: status,
-      current_period_end: currentPeriodEnd
+      current_period_end: currentPeriodEnd,
+      cancel_at: cancelAt
     })
     .eq('id', entreprise.id);
 

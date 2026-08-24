@@ -19,6 +19,7 @@ interface SubscriptionDecision {
   trialRemainingDays: number | null;
   trialExpired: boolean;
   hasValidSubscription: boolean;
+  cancelAt: string | null;
 }
 
 /**
@@ -79,7 +80,8 @@ function AbonnementPageContent() {
           subscriptionStatus: "not_authenticated",
           subscriptionInactiveReason: "not_authenticated",
           trialRemainingDays: null,
-          hasValidSubscription: false
+          hasValidSubscription: false,
+          cancelAt: null
         });
         return;
       }
@@ -465,67 +467,67 @@ function AbonnementPageContent() {
               Actions
             </h3>
             <div className="space-y-3">
-               {statusConfig.showUpgradeButton && (
-                 <div className="space-y-2">
-                   <button
-                     onClick={async () => {
-                       try {
-                         const response = await fetch('/api/stripe/checkout', {
-                           method: 'POST',
-                           headers: {
-                             'Content-Type': 'application/json',
-                           },
-                           body: JSON.stringify({ plan: 'monthly' }),
-                           credentials: 'include'
-                         });
+              {statusConfig.showUpgradeButton && (
+                <div className="space-y-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/stripe/checkout', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ plan: 'monthly' }),
+                          credentials: 'include'
+                        });
 
-                         if (!response.ok) {
-                           const errorData = await response.json();
-                           throw new Error(errorData.message || 'Erreur lors de la création de la session');
-                         }
+                        if (!response.ok) {
+                          const errorData = await response.json();
+                          throw new Error(errorData.message || 'Erreur lors de la création de la session');
+                        }
 
-                         const { checkoutUrl } = await response.json();
-                         window.location.href = checkoutUrl;
-                       } catch (error) {
-                         console.error('Erreur lors de la création du Checkout:', error);
-                         alert(error instanceof Error ? error.message : 'Impossible de créer la session de paiement');
-                       }
-                     }}
-                     className="w-full bg-green-600 text-white py-2 px-4 rounded-md font-medium hover:bg-green-700 transition-colors"
-                   >
-                     Souscrire mensuel (59€/mois)
-                   </button>
+                        const { checkoutUrl } = await response.json();
+                        window.location.href = checkoutUrl;
+                      } catch (error) {
+                        console.error('Erreur lors de la création du Checkout:', error);
+                        alert(error instanceof Error ? error.message : 'Impossible de créer la session de paiement');
+                      }
+                    }}
+                    className="w-full bg-green-600 text-white py-2 px-4 rounded-md font-medium hover:bg-green-700 transition-colors"
+                  >
+                    Souscrire mensuel (59€/mois)
+                  </button>
 
-                   <button
-                     onClick={async () => {
-                       try {
-                         const response = await fetch('/api/stripe/checkout', {
-                           method: 'POST',
-                           headers: {
-                             'Content-Type': 'application/json',
-                           },
-                           body: JSON.stringify({ plan: 'annual' }),
-                           credentials: 'include'
-                         });
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/stripe/checkout', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ plan: 'annual' }),
+                          credentials: 'include'
+                        });
 
-                         if (!response.ok) {
-                           const errorData = await response.json();
-                           throw new Error(errorData.message || 'Erreur lors de la création de la session');
-                         }
+                        if (!response.ok) {
+                          const errorData = await response.json();
+                          throw new Error(errorData.message || 'Erreur lors de la création de la session');
+                        }
 
-                         const { checkoutUrl } = await response.json();
-                         window.location.href = checkoutUrl;
-                       } catch (error) {
-                         console.error('Erreur lors de la création du Checkout:', error);
-                         alert(error instanceof Error ? error.message : 'Impossible de créer la session de paiement');
-                       }
-                     }}
-                     className="w-full bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors"
-                   >
-                     Souscrire annuel (590€/an - 2 mois offerts)
-                   </button>
-                 </div>
-               )}
+                        const { checkoutUrl } = await response.json();
+                        window.location.href = checkoutUrl;
+                      } catch (error) {
+                        console.error('Erreur lors de la création du Checkout:', error);
+                        alert(error instanceof Error ? error.message : 'Impossible de créer la session de paiement');
+                      }
+                    }}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Souscrire annuel (590€/an - 2 mois offerts)
+                  </button>
+                </div>
+              )}
 
               {statusConfig.showContactButton && (
                 <button
@@ -614,6 +616,25 @@ function AbonnementPageContent() {
             </div>
           </div>
         </div>
+
+        {/* Affichage de la résiliation programmée si applicable */}
+        {subscriptionData?.subscriptionStatus === 'active' && subscriptionData.cancelAt && new Date(subscriptionData.cancelAt) > new Date() && (
+          <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <div className="flex items-start">
+              <AlertCircle className="w-6 h-6 text-yellow-600 mr-3 flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold text-yellow-900 mb-2">Résiliation programmée</h4>
+                <p className="text-yellow-700">
+                  Votre abonnement restera actif jusqu'au {new Date(subscriptionData.cancelAt).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
