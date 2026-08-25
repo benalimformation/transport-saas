@@ -558,46 +558,48 @@ function AbonnementPageContent() {
         </div>
 
         {/* Informations détaillées */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Détails techniques</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-2">Données d'abonnement</h4>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Statut:</span>
-                  <code className="text-gray-900 bg-gray-50 px-2 py-1 rounded">
-                    {subscriptionData?.subscriptionStatus || "N/A"}
-                  </code>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Raison du refus:</span>
-                  <code className="text-gray-900 bg-gray-50 px-2 py-1 rounded">
-                    {subscriptionData?.subscriptionInactiveReason || "N/A"}
-                  </code>
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Détails techniques</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Données d'abonnement</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Statut:</span>
+                    <code className="text-gray-900 bg-gray-50 px-2 py-1 rounded">
+                      {subscriptionData?.subscriptionStatus || "N/A"}
+                    </code>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Raison du refus:</span>
+                    <code className="text-gray-900 bg-gray-50 px-2 py-1 rounded">
+                      {subscriptionData?.subscriptionInactiveReason || "N/A"}
+                    </code>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-2">Informations de débogage</h4>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">ID utilisateur:</span>
-                  <code className="text-gray-900 bg-gray-50 px-2 py-1 rounded text-xs">
-                    {subscriptionData?.userId ? `${subscriptionData.userId.substring(0, 8)}...` : "Non connecté"}
-                  </code>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Timestamp:</span>
-                  <code className="text-gray-900 bg-gray-50 px-2 py-1 rounded">
-                    {new Date().toLocaleTimeString("fr-FR")}
-                  </code>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Informations de débogage</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">ID utilisateur:</span>
+                    <code className="text-gray-900 bg-gray-50 px-2 py-1 rounded text-xs">
+                      {subscriptionData?.userId ? `${subscriptionData.userId.substring(0, 8)}...` : "Non connecté"}
+                    </code>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Timestamp:</span>
+                    <code className="text-gray-900 bg-gray-50 px-2 py-1 rounded">
+                      {new Date().toLocaleTimeString("fr-FR")}
+                    </code>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Note importante */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
@@ -606,12 +608,11 @@ function AbonnementPageContent() {
             <div>
               <h4 className="font-semibold text-blue-900 mb-2">Information importante</h4>
               <p className="text-blue-700 mb-2">
-                Le système de paiement Stripe n'est pas encore intégré. Cette page affiche l'état théorique
-                de votre abonnement basé sur les données enregistrées dans la base de données.
+                Votre abonnement et vos paiements sont gérés de manière sécurisée par Stripe.
               </p>
               <p className="text-blue-600 text-sm">
-                Une fois Stripe intégré, vous pourrez gérer votre abonnement, mettre à jour votre méthode de paiement,
-                et consulter votre historique de facturation directement depuis cette page.
+                Utilisez le bouton « Gérer mon abonnement » pour consulter et gérer votre abonnement,
+                votre moyen de paiement et vos informations de facturation.
               </p>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Home, Truck, Users, FileText, Package, CreditCard, BarChart, Settings, LogOut, ChevronRight, Briefcase, Cloud } from 'lucide-react';
 import { createClient } from '../../lib/supabase/client';
+import { isAuthorized, Role } from '../../lib/permissions';
 
 const supabase = createClient();
 
@@ -58,7 +59,7 @@ export default function DashboardSidebar() {
     try {
       // Récupérer l'utilisateur connecté
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
+
       if (userError || !user) {
         throw new Error('Utilisateur non connecté');
       }
@@ -100,7 +101,7 @@ export default function DashboardSidebar() {
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
-    
+
     setIsLoggingOut(true);
     try {
       const { error } = await supabase.auth.signOut();
@@ -130,6 +131,9 @@ export default function DashboardSidebar() {
 
   const adminNavItems: NavItem[] = [
     { icon: Settings, label: 'Paramètres', href: '/parametres', disabled: false },
+    ...(isAuthorized((profilData?.role as Role | undefined) ?? null, 'abonnement')
+      ? [{ icon: CreditCard, label: 'Abonnement', href: '/abonnement', disabled: false }]
+      : []),
     { icon: Cloud, label: 'Sauvegardes', href: '#', disabled: true },
   ];
 
@@ -214,13 +218,13 @@ export default function DashboardSidebar() {
           aria-label={isLoggingOut ? "Déconnexion en cours..." : "Se déconnecter"}
         >
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mr-3">
-                <span className="text-xs font-bold text-white">{getInitials(profilData?.nom || null)}</span>
+            <span className="text-xs font-bold text-white">{getInitials(profilData?.nom || null)}</span>
           </div>
           <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-white">{profilData?.nom || 'Chargement...'}</p>
-                <p className="text-xs text-gray-400">
-                  {isLoggingOut ? 'Déconnexion...' : translateRole(profilData?.role || null)}
-                </p>
+            <p className="text-sm font-medium text-white">{profilData?.nom || 'Chargement...'}</p>
+            <p className="text-xs text-gray-400">
+              {isLoggingOut ? 'Déconnexion...' : translateRole(profilData?.role || null)}
+            </p>
           </div>
           <LogOut className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
         </button>
@@ -241,12 +245,12 @@ interface SidebarItemProps {
 function SidebarItem({ icon: Icon, label, href, active = false, disabled = false, onClick }: SidebarItemProps) {
   const baseClasses = `
     flex items-center px-3 py-3 rounded-lg transition-colors
-    ${disabled 
-      ? 'opacity-50 cursor-not-allowed' 
+    ${disabled
+      ? 'opacity-50 cursor-not-allowed'
       : 'cursor-pointer hover:bg-gray-900/50'
     }
-    ${active 
-      ? 'bg-gradient-to-r from-green-900/20 to-green-800/10 border border-green-800/30' 
+    ${active
+      ? 'bg-gradient-to-r from-green-900/20 to-green-800/10 border border-green-800/30'
       : ''
     }
   `;

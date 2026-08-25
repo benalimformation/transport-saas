@@ -20,6 +20,7 @@ export const MODULE_PERMISSIONS = {
   // Admin modules
   admin: [ROLES.SUPER_ADMIN],
   utilisateurs: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+  abonnement: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
 
   // Business modules
   clients: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.EXPLOITANT],
