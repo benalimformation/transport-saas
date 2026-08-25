@@ -50,7 +50,7 @@ async function syncSubscription(subscription: Stripe.Subscription) {
   // Trouver l'entreprise correspondante
   const { data: entreprise, error } = await supabase
     .from('entreprises')
-    .select('id')
+    .select('id, stripe_subscription_id, subscription_status')
     .eq('stripe_customer_id', customerId)
     .single();
 
@@ -58,6 +58,22 @@ async function syncSubscription(subscription: Stripe.Subscription) {
     console.error(`Aucune entreprise trouvée pour le customer Stripe: ${customerId}`);
     return;
   }
+// Ne pas laisser un ancien abonnement Stripe écraser l'abonnement déjà suivi.
+// Un nouvel abonnement peut toutefois prendre le relais si l'ancien est terminé.
+const canReplaceExistingSubscription =
+  entreprise.subscription_status === 'canceled' ||
+  entreprise.subscription_status === 'incomplete_expired';
+
+if (
+  entreprise.stripe_subscription_id &&
+  entreprise.stripe_subscription_id !== subscriptionId &&
+  !canReplaceExistingSubscription
+) {
+  console.warn(
+    `Subscription Stripe ignorée: ${subscriptionId}. L'entreprise ${entreprise.id} suit déjà ${entreprise.stripe_subscription_id}.`
+  );
+  return;
+}
 
   // Mettre à jour l'entreprise
   const { error: updateError } = await supabase
