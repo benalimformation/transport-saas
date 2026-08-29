@@ -26,11 +26,26 @@ const PUBLIC_ROUTES = [
 ]
 
 /**
+ * Routes exemptées pour les utilisateurs authentifiés - Accessibles même si l'abonnement est expiré
+ */
+const AUTHENTICATED_SUBSCRIPTION_EXEMPT_ROUTES = [
+  '/api/subscription'
+]
+
+/**
  * Vérifie si une URL correspond à une route publique
  */
 function isPublicRoute(url: string): boolean {
   const pathname = new URL(url).pathname
   return PUBLIC_ROUTES.some(route => pathname === route)
+}
+
+/**
+ * Vérifie si une URL correspond à une route exemptée pour les utilisateurs authentifiés
+ */
+function isAuthenticatedSubscriptionExemptRoute(url: string): boolean {
+  const pathname = new URL(url).pathname
+  return AUTHENTICATED_SUBSCRIPTION_EXEMPT_ROUTES.some(route => pathname === route)
 }
 
 /**
@@ -103,6 +118,11 @@ export async function proxy(request: NextRequest) {
       })
 
       return apiResponse
+    }
+
+    // 3b. Vérifier si la route est exemptée pour les utilisateurs authentifiés
+    if (isAuthenticatedSubscriptionExemptRoute(request.url)) {
+      return supabaseResponse
     }
 
     // 4. Vérifier l'accès aux ressources via le service centralisé
