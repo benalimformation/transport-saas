@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { MODULE_PERMISSIONS, isAuthorized } from "../../lib/permissions";
 import { getStatusBadgeClass } from "../../lib/statusBadge";
 
@@ -22,6 +22,7 @@ type Devis = {
 };
 
 export default function DevisPage() {
+  const supabase = createClient();
   const [devis, setDevis] = useState<Devis[]>([]);
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
   const [filtreStatut, setFiltreStatut] = useState<string | null>(null);
@@ -106,7 +107,7 @@ export default function DevisPage() {
 
       // Calculer les indicateurs
       const total = data?.length || 0;
-      const montantTotal = data?.reduce((sum, devis) => sum + (devis.prix_ttc || devis.prix || 0), 0) || 0;
+      const montantTotal = data?.reduce((sum: number, devis: { prix_ttc: number | null; prix: number | null }) => sum + (devis.prix_ttc || devis.prix || 0), 0) || 0;
       const acceptes = data?.filter(d => d.statut === "Accepté").length || 0;
       const refuses = data?.filter(d => d.statut === "Refusé").length || 0;
 

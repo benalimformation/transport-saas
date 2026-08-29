@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { isAuthorized } from "../../lib/permissions";
 
 // Type pour les paramètres de l'entreprise (table entreprises)
@@ -47,6 +47,8 @@ function ParametresPageLoading() {
  */
 function ParametresPageContent() {
   const router = useRouter();
+  const supabase = createClient();
+
   const [settings, setSettings] = useState<Entreprise>({
     nom: "",
     adresse: "",

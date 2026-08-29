@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 
 type Chauffeur = {
   id: string;
@@ -20,6 +20,7 @@ type Livraison = {
 };
 
 export default function PlanningPage() {
+  const supabase = createClient();
   const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([]);
   const [livraisons, setLivraisons] = useState<Livraison[]>([]);
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "../../lib/supabase"
+import { createClient } from "../../lib/supabase/client";
 
 type Profil = {
   id: string
@@ -27,6 +27,7 @@ type Toast = {
 }
 
 export default function AdminPage() {
+  const supabase = createClient();
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -130,21 +131,21 @@ export default function AdminPage() {
       setFilteredProfils(allProfils)
 
       // Extraire les entreprises uniques pour le filtre
-      const uniqueEntreprises = Array.from(new Set(
-        allProfils.map(p => p.entreprise_id).filter(id => id) as string[]
+      const uniqueEntreprises = Array.from(new Set<string>(
+        allProfils.map((p: Profil) => p.entreprise_id).filter((id): id is string => id !== null)
       ))
       setEntreprises(uniqueEntreprises)
 
       // Calculer les statistiques côté frontend
       const totalUsers = allProfils.length
-      const superAdmins = allProfils.filter(p => p.role === "super_admin").length
-      const admins = allProfils.filter(p => p.role === "admin").length
+      const superAdmins = allProfils.filter((p: Profil) => p.role === "super_admin").length
+      const admins = allProfils.filter((p: Profil) => p.role === "admin").length
       const otherRoles = totalUsers - superAdmins - admins
 
       // Calculer le nombre approximatif d'entreprises (entreprise_id distincts)
       const uniqueCompanyIds = new Set(allProfils
-        .map(p => p.entreprise_id)
-        .filter(id => id !== null && id !== undefined) as string[])
+        .map((p: { entreprise_id: string | null }) => p.entreprise_id)
+        .filter((id: string | null): id is string => id !== null && id !== undefined))
 
       setStats({
         totalUsers,

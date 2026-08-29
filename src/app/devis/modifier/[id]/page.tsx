@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "../../../../lib/supabase";
+import { createClient } from "../../../../lib/supabase/client";
 
 export default function ModifierDevisPage() {
+  const supabase = createClient();
   const params = useParams();
   const id = params.id as string;
 

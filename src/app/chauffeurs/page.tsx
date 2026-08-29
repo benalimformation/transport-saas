@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { MODULE_PERMISSIONS, isAuthorized } from "../../lib/permissions";
 
 type Chauffeur = {
@@ -14,6 +14,7 @@ type Chauffeur = {
 };
 
 export default function ChauffeursPage() {
+  const supabase = createClient();
   const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([]);
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

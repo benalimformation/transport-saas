@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../../lib/supabase";
+import { createClient } from "../../../lib/supabase/client";
 
 type Livraison = {
   id: string;
@@ -13,6 +13,7 @@ type Livraison = {
 };
 
 export default function NouvelleFacturePage() {
+  const supabase = createClient();
   const [livraisons, setLivraisons] = useState<Livraison[]>([]);
   const [livraisonId, setLivraisonId] = useState("");
   const [loading, setLoading] = useState(false);

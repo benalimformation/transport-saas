@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 
 export default function ResetPassword() {
+  const supabase = createClient();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +16,7 @@ export default function ResetPassword() {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
       if (event === "PASSWORD_RECOVERY") {
         setRecoverySession(true);
       }

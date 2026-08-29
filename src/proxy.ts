@@ -58,6 +58,7 @@ export async function proxy(request: NextRequest) {
 
   const cookies = request.cookies.getAll()
 
+
   try {
 
     // 1. Routes publiques - Accès autorisé sans vérification d'authentification

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../../lib/supabase";
+import { createClient } from "../../../lib/supabase/client";
 
 type Client = {
   id: string;
@@ -9,6 +9,7 @@ type Client = {
 };
 
 export default function NouveauDevisPage() {
+  const supabase = createClient();
   const [clients, setClients] = useState<Client[]>([]);
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
 

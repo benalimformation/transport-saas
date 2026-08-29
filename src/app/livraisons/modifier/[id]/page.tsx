@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "../../../../lib/supabase";
+import { createClient } from "../../../../lib/supabase/client";
 
 type Chauffeur = {
   id: string;
@@ -15,6 +15,7 @@ type Camion = {
 };
 
 export default function ModifierLivraisonPage() {
+  const supabase = createClient();
   const params = useParams();
   const id = params.id as string;
 

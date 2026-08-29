@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { MODULE_PERMISSIONS, isAuthorized } from "../../lib/permissions";
 
 export default function RentabilitePage() {
+  const supabase = createClient();
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
   const [period, setPeriod] = useState<"month" | "quarter" | "year" | "custom">("month");
   const [customDateDebut, setCustomDateDebut] = useState<string | null>(null);
@@ -159,8 +160,8 @@ export default function RentabilitePage() {
       if (livraisonsCountError) throw livraisonsCountError;
 
       // Calculer les métriques
-      const caTotal = facturesData?.reduce((sum, f) => sum + (f.montant_ttc || 0), 0) || 0;
-      const depensesTotal = depensesData?.reduce((sum, d) => sum + (d.montant || 0), 0) || 0;
+      const caTotal = facturesData?.reduce((sum: number, f: { montant_ttc: number | null }) => sum + (f.montant_ttc || 0), 0) || 0;
+      const depensesTotal = depensesData?.reduce((sum: number, d: { montant: number | null }) => sum + (d.montant || 0), 0) || 0;
       const beneficeNet = caTotal - depensesTotal;
       const marge = caTotal > 0 ? (beneficeNet / caTotal) * 100 : 0;
 

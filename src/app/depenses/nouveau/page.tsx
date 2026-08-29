@@ -2,9 +2,10 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "../../../lib/supabase";
+import { createClient } from "../../../lib/supabase/client";
 
 function NouveauDepenseContent() {
+  const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
   const depenseId = searchParams.get('id');

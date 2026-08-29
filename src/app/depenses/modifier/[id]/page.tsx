@@ -2,9 +2,10 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../../../lib/supabase";
+import { createClient } from "../../../../lib/supabase/client";
 
 function ModifierDepenseContent({ params }: { params: { id: string } }) {
+  const supabase = createClient();
   const router = useRouter();
   const depenseId = params.id;
 

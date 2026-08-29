@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { supabase } from "../../../../lib/supabase";
+import { createClient } from "../../../../lib/supabase/client";
 
 export default function ModifierClientPage() {
+  const supabase = createClient();
   const params = useParams();
   const router = useRouter();
 

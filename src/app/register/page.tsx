@@ -1,11 +1,12 @@
-"use client"
+﻿"use client"
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from "../../lib/supabase"
+import { createClient } from "../../lib/supabase/client";
 import { Check, Shield, Cloud, FileText } from 'lucide-react'
 
 export default function RegisterPage() {
+  const supabase = createClient();
   const [nom, setNom] = useState('')
   const [nomEntreprise, setNomEntreprise] = useState('')
   const [email, setEmail] = useState('')
@@ -51,7 +52,6 @@ nom_utilisateur: nom.trim(),
           }
         }
       })
-
       if (authError) {
         throw authError
       }

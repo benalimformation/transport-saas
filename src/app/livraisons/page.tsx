@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { MODULE_PERMISSIONS, isAuthorized } from "../../lib/permissions";
 import { getStatusBadgeClass } from "../../lib/statusBadge";
 
@@ -34,6 +34,7 @@ type Camion = {
 };
 
 export default function LivraisonsPage() {
+  const supabase = createClient();
   const [livraisons, setLivraisons] = useState<Livraison[]>([]);
   const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([]);
   const [camions, setCamions] = useState<Camion[]>([]);

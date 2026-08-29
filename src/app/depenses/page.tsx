@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { MODULE_PERMISSIONS, isAuthorized } from "../../lib/permissions";
 
 type Depense = {
@@ -28,6 +28,7 @@ const CATEGORIES_TRANSPORT = [
 ];
 
 export default function DepensesPage() {
+  const supabase = createClient();
   const [depenses, setDepenses] = useState<Depense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,7 +123,11 @@ export default function DepensesPage() {
       setDepenses(data || []);
 
       // Calculer le total des dépenses filtrées
-      const total = data?.reduce((sum, depense) => sum + (depense.montant || 0), 0) || 0;
+      const total = data?.reduce(
+      (sum: number, depense: { montant: number | null }) =>
+        sum + (depense.montant || 0),
+      0
+    ) || 0;
       setTotalFiltre(total);
     } catch (err) {
       setError("Erreur lors du chargement des dépenses: " + (err as Error).message);

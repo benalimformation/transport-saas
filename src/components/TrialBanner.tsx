@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { createClient } from "../lib/supabase/client";
 import { Clock, AlertTriangle, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 
 /**
@@ -306,6 +306,7 @@ export default function TrialBanner() {
  * @returns {Object} Données d'abonnement et état de chargement
  */
 export function useSubscriptionData() {
+  const supabase = createClient();
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

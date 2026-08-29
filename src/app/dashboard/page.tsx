@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { getDashboardCardsForRole, Role } from "../../lib/permissions";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
@@ -26,6 +26,7 @@ type Depense = {
 };
 
 export default function DashboardPage() {
+  const supabase = createClient();
   const [caTTC, setCaTTC] = useState(0);
   const [encaisse, setEncaisse] = useState(0);
   const [resteEncaisser, setResteEncaisser] = useState(0);

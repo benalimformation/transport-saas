@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { MODULE_PERMISSIONS, isAuthorized } from "../../lib/permissions";
 import { getStatusBadgeClass } from "../../lib/statusBadge";
 
@@ -19,6 +19,7 @@ type Facture = {
 };
 
 export default function FacturesPage() {
+  const supabase = createClient();
   const [factures, setFactures] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,7 +115,7 @@ export default function FacturesPage() {
       setFactures(data || []);
 
       // Calculer les totaux
-      const total = data?.reduce((sum, facture) => sum + (facture.montant_ttc || 0), 0) || 0;
+      const total = data?.reduce((sum: number, facture: { montant_ttc: number | null }) => sum + (facture.montant_ttc || 0), 0) || 0;
       const totalPaye = data?.filter(f => f.statut === "Payée")
         .reduce((sum, facture) => sum + (facture.montant_ttc || 0), 0) || 0;
       const totalNonPaye = total - totalPaye;

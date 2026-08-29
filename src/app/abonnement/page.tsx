@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { Shield, Clock, AlertCircle, CheckCircle, XCircle, CreditCard, Calendar, Users, Truck } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
@@ -52,6 +52,7 @@ function AbonnementPageLoading() {
  * Ce composant utilise useSearchParams qui nécessite Suspense
  */
 function AbonnementPageContent() {
+  const supabase = createClient();
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

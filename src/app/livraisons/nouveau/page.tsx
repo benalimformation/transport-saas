@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { supabase } from "../../../lib/supabase";
+import { createClient } from "../../../lib/supabase/client";
 import { Suspense } from "react";
 type Client = {
   id: string;
@@ -19,6 +19,7 @@ type Camion = {
   immatriculation: string;
 };
 function NouvelleLivraisonForm() {
+  const supabase = createClient();
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
 
   const [clientId, setClientId] = useState("");
