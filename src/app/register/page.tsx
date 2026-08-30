@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const supabase = createClient();
   const [nom, setNom] = useState('')
   const [nomEntreprise, setNomEntreprise] = useState('')
+  const [siret, setSiret] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -26,6 +27,11 @@ export default function RegisterPage() {
     try {
       if (!nom.trim() || !nomEntreprise.trim()) {
   throw new Error("Le nom et le nom de l’entreprise sont obligatoires")
+}
+const normalizedSiret = siret.replace(/\D/g, '')
+
+if (normalizedSiret.length !== 14) {
+  throw new Error("Le SIRET doit contenir exactement 14 chiffres.")
 }
 
       // Vérifier que les mots de passe correspondent
@@ -47,9 +53,11 @@ export default function RegisterPage() {
         email,
         password,
         options: {
-          data: {nom_entreprise: nomEntreprise.trim(),
-nom_utilisateur: nom.trim(),
-          }
+         data: {
+  nom_entreprise: nomEntreprise.trim(),
+  nom_utilisateur: nom.trim(),
+  siret: normalizedSiret,
+}
         }
       })
       if (authError) {
@@ -154,7 +162,7 @@ nom_utilisateur: nom.trim(),
 
             {success && (
               <div className="p-4 mb-6 text-sm text-green-400 rounded-lg bg-green-900/30 border border-green-800" role="alert">
-               Compte créé avec succès. Connectez-vous pour commencer votre essai gratuit de 30 jours.
+           Compte créé avec succès. Connectez-vous pour continuer.
               </div>
             )}
 
@@ -191,6 +199,22 @@ nom_utilisateur: nom.trim(),
                     placeholder="Nom de votre entreprise"
                   />
                 </div>
+                <div>
+  <label htmlFor="siret" className="block text-sm font-medium text-gray-300 mb-1">
+    SIRET
+  </label>
+  <input
+    id="siret"
+    name="siret"
+    type="text"
+    inputMode="numeric"
+    required
+    value={siret}
+    onChange={(e) => setSiret(e.target.value)}
+    className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white placeholder-gray-400"
+    placeholder="14 chiffres"
+  />
+</div>
 
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
