@@ -416,111 +416,74 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="tarifs" className="py-16 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Des tarifs adaptés à votre taille
+              Une offre simple, sans surprise
             </h2>
+            <p className="text-gray-600">
+              Toutes les fonctionnalités de TransportERP dans une seule offre.
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Starter Plan */}
-            <div className="bg-white p-8 rounded-lg border border-gray-200 flex flex-col">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">STARTER</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900">39 €</span>
+
+          <div className="max-w-xl mx-auto bg-white p-8 rounded-lg border-2 border-green-600 shadow-lg">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                TRANSPORTERP
+              </h3>
+
+              <div className="mb-2">
+                <span className="text-4xl font-bold text-gray-900">59 € HT</span>
                 <span className="text-gray-500">/mois</span>
               </div>
-              <ul className="space-y-3 text-sm text-gray-600 mb-8 flex-grow">
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-600 mr-2" />
-                  1 utilisateur
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-600 mr-2" />
-                  50 devis/mois
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-600 mr-2" />
-                  50 factures/mois
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-600 mr-2" />
-                  Support email
-                </li>
-              </ul>
-              <button className="w-full bg-white border border-green-600 text-green-600 py-2 rounded-md font-medium hover:bg-green-50 transition-colors">
-                Choisir STARTER
-              </button>
-            </div>
 
-            {/* Pro Plan (Featured) */}
-            <div className="bg-green-600 text-white p-8 rounded-lg border border-green-700 flex flex-col transform scale-105">
-              <h3 className="text-lg font-semibold mb-2">PRO</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold">69 €</span>
-                <span className="text-green-200">/mois</span>
-              </div>
-              <ul className="space-y-3 text-sm text-green-100 mb-8 flex-grow">
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-200 mr-2" />
-                  3 utilisateurs
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-200 mr-2" />
-                  Devis illimités
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-200 mr-2" />
-                  Factures illimitées
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-200 mr-2" />
-                  Support prioritaire
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-200 mr-2" />
-                  Analyse avancée
-                </li>
-              </ul>
-              <button className="w-full bg-white text-green-600 py-2 rounded-md font-medium hover:bg-gray-100 transition-colors">
-                Choisir PRO
-              </button>
-            </div>
+              <p className="text-gray-500 mb-6">
+                ou 590 € HT/an
+              </p>
 
-            {/* Business Plan */}
-            <div className="bg-white p-8 rounded-lg border border-gray-200 flex flex-col">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">BUSINESS</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900">99 €</span>
-                <span className="text-gray-500">/mois</span>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <p className="font-semibold text-green-700">
+                  Offre Membres Fondateurs
+                </p>
+                <p className="text-sm text-green-700 mt-1">
+                  Les 10 premiers clients bénéficient de 39 € HT/mois pendant 12 mois.
+                </p>
               </div>
-              <ul className="space-y-3 text-sm text-gray-600 mb-8 flex-grow">
+
+              <ul className="space-y-3 text-sm text-gray-600 mb-8 text-left">
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-600 mr-2" />
-                  10 utilisateurs
+                  Toutes les fonctionnalités incluses
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-600 mr-2" />
-                  Toutes fonctionnalités
+                  30 jours d'essai gratuit
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-600 mr-2" />
-                  Support dédié
+                  Sans carte bancaire pendant l'essai
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-600 mr-2" />
-                  Formation incluse
+                  Mises à jour incluses
+                </li>
+                <li className="flex items-center">
+                  <Check className="w-4 h-4 text-green-600 mr-2" />
+                  Sans engagement
                 </li>
               </ul>
-              <button className="w-full bg-white border border-green-600 text-green-600 py-2 rounded-md font-medium hover:bg-green-50 transition-colors">
-                Choisir BUSINESS
-              </button>
+
+              <a
+                href="/register"
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-md font-medium transition-colors inline-block"
+              >
+                Essayer gratuitement pendant 30 jours
+              </a>
             </div>
           </div>
         </div>
       </section>
-
       {/* FAQ Section */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -478,15 +478,14 @@ export default function DashboardHeader() {
               <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
               <span className="text-gray-300">Système opérationnel</span>
             </div>
-            <div className="flex items-center">
+              <div className="flex items-center">
               <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-              <span className="text-gray-300">8 véhicules en service</span>
+              <span className="text-gray-300">Aucun véhicule enregistré</span>
             </div>
             <div className="flex items-center">
               <span className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
-              <span className="text-gray-300">3 livraisons aujourd'hui</span>
+              <span className="text-gray-300">Aucune livraison aujourd'hui</span>
             </div>
-          </div>
           <div className="text-gray-400 text-xs">
             Dernière mise à jour : 15:42
           </div>
