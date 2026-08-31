@@ -87,7 +87,7 @@ if (normalizedSiret.length !== 14) {
       // Redirect to login after successful registration
       setTimeout(() => {
         router.replace('/login')
-      }, 2000)
+     }, 5000)
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during registration')

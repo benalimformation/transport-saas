@@ -78,8 +78,8 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <a href="#" className="text-gray-500 hover:text-green-600 text-sm font-medium">Connexion</a>
-              <a href="#" className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">ESSAI GRATUIT</a>
+              <a href="/login" className="text-gray-500 hover:text-green-600 text-sm font-medium">Connexion</a>
+              <a href="/register" className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">ESSAI GRATUIT</a>
             </div>
           </div>
         </div>
