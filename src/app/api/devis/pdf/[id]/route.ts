@@ -1,4 +1,4 @@
-import { supabase } from "../../../../../lib/supabase";
+import { createSupabaseServiceClient } from "../../../../../lib/supabase/service";
 import { getCompanyParams, getLogoBuffer } from "../../../../../lib/getCompanyParams";
 
 export const runtime = "nodejs";
@@ -8,6 +8,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  const supabase = createSupabaseServiceClient();
   const { default: PDFDocument } = await import("pdfkit");
 
   const { data: devis, error } = await supabase
