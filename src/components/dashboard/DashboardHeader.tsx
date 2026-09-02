@@ -184,6 +184,7 @@ export default function DashboardHeader() {
     entreprise_id: string | null;
   } | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [vehicleCount, setVehicleCount] = useState(0);
 
   useEffect(() => {
     const dateStr = new Date().toLocaleDateString('fr-FR', {
@@ -236,6 +237,22 @@ export default function DashboardHeader() {
     fetchUserProfile();
   }, []);
 
+  useEffect(() => {
+  const fetchVehicleCount = async () => {
+    if (!userProfile?.entreprise_id) return;
+
+    const { count, error } = await supabase
+      .from('camions')
+      .select('*', { count: 'exact', head: true })
+      .eq('entreprise_id', userProfile.entreprise_id);
+
+    if (!error) {
+      setVehicleCount(count || 0);
+    }
+  };
+
+  fetchVehicleCount();
+}, [userProfile]);
   // Effet pour récupérer la ville de l'entreprise depuis Supabase
   useEffect(() => {
     const fetchCompanyCity = async () => {
@@ -473,17 +490,22 @@ export default function DashboardHeader() {
       {/* Barre d'état générale - bandeau sous le header */}
       <div className="bg-gradient-to-r from-gray-900 to-gray-950 border-t border-gray-800 px-6 py-2">
         <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center  gap-8">
             <div className="flex items-center">
               <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
               <span className="text-gray-300">Système opérationnel</span>
             </div>
               <div className="flex items-center">
               <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-              <span className="text-gray-300">Aucun véhicule enregistré</span>
             </div>
             <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
+              <span className="text-gray-300">
+  {vehicleCount > 0
+    ? `${vehicleCount} véhicule${vehicleCount > 1 ? 's' : ''} enregistré${vehicleCount > 1 ? 's' : ''}`
+    : 'Aucun véhicule enregistré'}
+</span>
+</div>
+<div className="flex items-center">
               <span className="text-gray-300">Aucune livraison aujourd'hui</span>
             </div>
           <div className="text-gray-400 text-xs">
@@ -491,6 +513,7 @@ export default function DashboardHeader() {
           </div>
         </div>
       </div>
+     </div>
     </header>
   );
 }

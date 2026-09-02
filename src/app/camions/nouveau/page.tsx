@@ -52,7 +52,9 @@ export default function NouveauCamionPage() {
       return;
     }
 
-    window.location.href = "/camions";
+    window.location.href = new URLSearchParams(window.location.search).get("onboarding") === "1"
+  ? "/dashboard"
+  : "/camions";
   }
 
   return (

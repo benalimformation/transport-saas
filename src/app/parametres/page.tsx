@@ -173,7 +173,8 @@ function ParametresPageContent() {
       setTimeout(() => setSuccess(null), blockingSettingsTimeout);
 
       // Rediriger vers le dashboard après succès
-      router.replace('/dashboard');
+      const isOnboarding = new URLSearchParams(window.location.search).get("complete") === "1";
+router.replace(isOnboarding ? "/camions/nouveau?onboarding=1" : "/dashboard");
 
     } catch (err) {
       setError("Erreur lors de l'enregistrement: " + (err as Error).message);
