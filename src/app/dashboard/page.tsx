@@ -346,12 +346,23 @@ export default function DashboardPage() {
 
           {/* Actions rapides */}
           <DashboardSection title="Actions rapides" subtitle="Opérations fréquentes">
-            <div className="h-32 flex items-center justify-center border-2 border-dashed border-gray-800 rounded-lg group-hover:border-gray-700 transition-colors duration-300">
-              <div className="text-center px-4">
-                <p className="text-sm text-gray-500 font-medium">Boutons d'action</p>
-                <p className="text-xs text-gray-600 mt-1">Contenu au Sprint suivant</p>
-              </div>
-            </div>
+            <div className="h-32 flex items-center justify-center">
+  {!hasClients ? (
+    <a
+      href="/clients/nouveau"
+      className="rounded-lg bg-green-600 px-6 py-3 font-medium text-white hover:bg-green-700"
+    >
+      Ajouter mon premier client
+    </a>
+  ) : (
+    <a
+      href="/clients"
+      className="rounded-lg bg-gray-700 px-6 py-3 font-medium text-white hover:bg-gray-600"
+    >
+      Voir mes clients
+    </a>
+  )}
+</div>
           </DashboardSection>
         </div>
 
