@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "../../../lib/supabase/client";
 
 export default function NouveauCamionPage() {
@@ -8,11 +8,15 @@ export default function NouveauCamionPage() {
   const [marque, setMarque] = useState("");
   const [modele, setModele] = useState("");
   const [statut, setStatut] = useState("Disponible");
+  const [isOnboarding, setIsOnboarding] = useState(false);
+  useEffect(() => {
+  setIsOnboarding(new URLSearchParams(window.location.search).get("onboarding") === "1");
+}, []);
 
   async function ajouterCamion(e: React.FormEvent) {
     e.preventDefault();
 
-    const supabase = createClient();
+      const supabase = createClient();
 
     const {
       data: { user },
@@ -52,7 +56,7 @@ export default function NouveauCamionPage() {
       return;
     }
 
-    window.location.href = new URLSearchParams(window.location.search).get("onboarding") === "1"
+   window.location.href = isOnboarding
   ? "/dashboard"
   : "/camions";
   }
@@ -60,15 +64,19 @@ export default function NouveauCamionPage() {
   return (
     <main className="min-h-screen bg-gray-950 p-10 text-white">
       <h1 className="mb-8 text-5xl font-bold">
-        Nouveau camion
+      {isOnboarding
+  ? "Ajoutez votre premier véhicule"
+  : "Nouveau camion"}
       </h1>
+      {!isOnboarding && (
 
-      <a
-        href="/camions"
-        className="mb-6 inline-block rounded bg-gray-700 px-4 py-2"
-      >
-        ← Retour Camions
-      </a>
+  <a
+    href="/camions"
+    className="mb-6 inline-block rounded bg-gray-700 px-4 py-2"
+  >
+    ← Retour Camions
+  </a>
+)}
 
       <form
         onSubmit={ajouterCamion}
