@@ -62,13 +62,23 @@ export default function LoginPage() {
 
       const companyIncomplete = !entreprise.adresse?.trim() || !entreprise.telephone?.trim();
 
+      const { count: vehicleCount } = await supabase
+  .from("camions")
+  .select("*", { count: "exact", head: true })
+  .eq("entreprise_id", profil.entreprise_id);
       if (companyIncomplete) {
+
         // Redirection vers paramètres pour compléter les informations obligatoires
         router.replace('/parametres?complete=1');
         router.refresh();
         return;
       }
 
+if (vehicleCount === 0) {
+  router.replace('/camions/nouveau?onboarding=1');
+  router.refresh();
+  return;
+}
       // Redirection selon le rôle
       if (profil.role === "super_admin") {
         router.replace('/admin');
