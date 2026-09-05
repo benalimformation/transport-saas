@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { createSupabaseServiceClient } from "./supabase/service";
 
 /**
  * Fetch company parameters for document generation
@@ -6,6 +7,12 @@ import { supabase } from "./supabase";
  * @returns Company parameters or null if not found
  */
 export async function getCompanyParams(entrepriseId: string) {
+  const supabase = createSupabaseServiceClient();
+  const { data: entreprise } = await supabase
+  .from("entreprises")
+  .select("nom, adresse, telephone, email")
+  .eq("id", entrepriseId)
+  .single();
   const { data: params, error } = await supabase
     .from("parametres_entreprise")
     .select("*")
@@ -22,10 +29,10 @@ export async function getCompanyParams(entrepriseId: string) {
   }
 
   return {
-    nom: params.nom || "TRANSPORT SAAS",
-    adresse: params.adresse || "",
-    telephone: params.telephone || "",
-    email: params.email || "",
+   nom: entreprise?.nom || params.nom || "TRANSPORT SAAS",
+adresse: entreprise?.adresse || params.adresse || "",
+telephone: entreprise?.telephone || params.telephone || "",
+email: entreprise?.email || params.email || "",
     site_web: params.site_web || "",
     siret: params.siret || "",
     tva_intra: params.tva_intra || "",

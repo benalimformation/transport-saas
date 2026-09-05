@@ -81,7 +81,9 @@ const numeroDevis = companyParams?.prefixe_devis
 doc.fontSize(10).text(`Devis n° : ${numeroDevis}`, 50, 150);
   
   doc.text(`Date d'émission : ${new Date().toLocaleDateString("fr-FR")}`, 50, 165);
-  doc.text(`Statut : ${devis.statut || "Brouillon"}`, 50, 180);
+ if (devis.statut && devis.statut !== "Brouillon") {
+  doc.text(`Statut : ${devis.statut}`, 50, 180);
+}
 
   doc.moveTo(50, 205).lineTo(545, 205).stroke();
 
