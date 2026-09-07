@@ -20,6 +20,35 @@ export default function NouveauDevisPage() {
   const [poids, setPoids] = useState("");
   const [palettes, setPalettes] = useState("");
   const [dateTransport, setDateTransport] = useState("");
+    // Informations contractuelles du devis
+  const [referenceClient, setReferenceClient] = useState("");
+const [validiteJusquAu, setValiditeJusquAu] = useState(() => {
+  const date = new Date();
+  date.setDate(date.getDate() + 30);
+  return date.toISOString().split("T")[0];
+});
+  // Marchandise
+  const [natureMarchandise, setNatureMarchandise] = useState("");
+  const [nombreColis, setNombreColis] = useState("");
+  const [volumeM3, setVolumeM3] = useState("");
+
+  // Expéditeur
+  const [expediteurNom, setExpediteurNom] = useState("");
+  const [expediteurAdresse, setExpediteurAdresse] = useState("");
+
+  // Destinataire
+  const [destinataireNom, setDestinataireNom] = useState("");
+  const [destinataireAdresse, setDestinataireAdresse] = useState("");
+
+  // Chargement / déchargement
+  const [dateChargement, setDateChargement] = useState("");
+  const [heureChargement, setHeureChargement] = useState("");
+  const [dateDechargement, setDateDechargement] = useState("");
+  const [heureDechargement, setHeureDechargement] = useState("");
+
+  // Conditions particulières
+  const [prestationsAnnexes, setPrestationsAnnexes] = useState("");
+  const [conditionsParticulieres, setConditionsParticulieres] = useState("");
 
   const [prixHT, setPrixHT] = useState(0);
   const [tva, setTVA] = useState(0);
@@ -117,12 +146,32 @@ export default function NouveauDevisPage() {
       {
         client_id: clientId,
         client: clientSelectionne?.nom || "",
-        depart,
-        arrivee,
+       depart: expediteurAdresse || depart,
+arrivee: destinataireAdresse || arrivee,
         distance_km: parseFloat(distanceKm.replace(",", ".")) || 0,
         poids: parseFloat(poids.replace(",", ".")) || 0,
         palettes: parseFloat(palettes.replace(",", ".")) || 0,
-        date_transport: dateTransport,
+        date_transport: dateChargement || dateTransport,
+        validite_jusqu_au: validiteJusquAu || null,
+reference_client: referenceClient || null,
+nature_marchandise: natureMarchandise || null,
+nombre_colis: nombreColis ? parseInt(nombreColis, 10) : null,
+volume_m3: volumeM3 ? parseFloat(volumeM3.replace(",", ".")) : null,
+
+expediteur_nom: expediteurNom || null,
+expediteur_adresse: expediteurAdresse || null,
+
+destinataire_nom: destinataireNom || null,
+destinataire_adresse: destinataireAdresse || null,
+
+date_chargement: dateChargement || null,
+heure_chargement: heureChargement || null,
+
+date_dechargement: dateDechargement || null,
+heure_dechargement: heureDechargement || null,
+
+prestations_annexes: prestationsAnnexes || null,
+conditions_particulieres: conditionsParticulieres || null,
         prix: prixTTC,
         prix_ht: prixHT,
         tva,
@@ -156,6 +205,9 @@ export default function NouveauDevisPage() {
         onSubmit={creerDevis}
         className="max-w-xl space-y-4 rounded-xl border border-gray-800 bg-gray-900 p-6"
       >
+        <label className="mb-1 block text-sm font-medium text-gray-300">
+  Client
+</label>
         <select
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
@@ -169,60 +221,232 @@ export default function NouveauDevisPage() {
             </option>
           ))}
         </select>
+        <div className="border-t border-gray-700 pt-4">
+  <h2 className="mb-3 text-xl font-semibold">Informations du devis</h2>
 
-        <input
-          type="text"
-          placeholder="Départ"
-          value={depart}
-          onChange={(e) => setDepart(e.target.value)}
-          className="w-full rounded bg-gray-800 p-3"
-          required
-        />
+<label className="mb-1 block text-sm font-medium text-gray-300">
+  Référence client / bon de commande
+  <span className="ml-1 text-gray-500">(facultatif)</span>
+</label>
+<input
+  type="text"
+  value={referenceClient}
+  onChange={(e) => setReferenceClient(e.target.value)}
+  className="mb-3 w-full rounded bg-gray-800 p-3"
+/>
 
-        <input
-          type="text"
-          placeholder="Arrivée"
-          value={arrivee}
-          onChange={(e) => setArrivee(e.target.value)}
-          className="w-full rounded bg-gray-800 p-3"
-          required
-        />
+  <label className="mb-1 block text-sm text-gray-300">
+    Devis valable jusqu'au
+  </label>
+  <input
+    type="date"
+    value={validiteJusquAu}
+    onChange={(e) => setValiditeJusquAu(e.target.value)}
+    className="w-full rounded bg-gray-800 p-3"
+  />
+</div>
+<div className="border-t border-gray-700 pt-4">
+  <h2 className="mb-3 text-xl font-semibold">Marchandise</h2>
 
-        <input
-          type="number"
-          placeholder="Distance (km)"
-          value={distanceKm}
-          onChange={(e) => setDistanceKm(e.target.value)}
-          className="w-full rounded bg-gray-800 p-3"
-          required
-        />
+  <label className="mb-1 block text-sm font-medium text-gray-300">
+  Nature de la marchandise
+</label>
+<input
+  type="text"
+  value={natureMarchandise}
+  onChange={(e) => setNatureMarchandise(e.target.value)}
+  className="mb-3 w-full rounded bg-gray-800 p-3"
+/>
 
-        <input
-          type="number"
-          placeholder="Poids (tonnes)"
-          value={poids}
-          onChange={(e) => setPoids(e.target.value)}
-          className="w-full rounded bg-gray-800 p-3"
-          required
-        />
+<label className="mb-1 block text-sm font-medium text-gray-300">
+  Nombre de colis
+  <span className="ml-1 text-gray-500">(facultatif)</span>
+</label>
+<input
+  type="number"
+  min="0"
+  value={nombreColis}
+  onChange={(e) => setNombreColis(e.target.value)}
+  className="mb-3 w-full rounded bg-gray-800 p-3"
+/>
 
-        <input
-          type="number"
-          placeholder="Nombre de palettes"
-          value={palettes}
-          onChange={(e) => setPalettes(e.target.value)}
-          className="w-full rounded bg-gray-800 p-3"
-          required
-        />
+<label className="mb-1 block text-sm font-medium text-gray-300">
+  Volume total (m³)
+  <span className="ml-1 text-gray-500">(facultatif)</span>
+</label>
+<input
+  type="number"
+  min="0"
+  step="0.001"
+  value={volumeM3}
+  onChange={(e) => setVolumeM3(e.target.value)}
+  className="w-full rounded bg-gray-800 p-3"
+/>
+</div>
+<div className="border-t border-gray-700 pt-4">
+  <h2 className="mb-3 text-xl font-semibold">Expéditeur</h2>
 
-        <input
-          type="date"
-          value={dateTransport}
-          onChange={(e) => setDateTransport(e.target.value)}
-          className="w-full rounded bg-gray-800 p-3"
-          required
-        />
+ <label className="mb-1 block text-sm font-medium text-gray-300">
+  Nom ou raison sociale de l'expéditeur
+</label>
+<input
+  type="text"
+  value={expediteurNom}
+  onChange={(e) => setExpediteurNom(e.target.value)}
+  className="mb-3 w-full rounded bg-gray-800 p-3"
+/>
 
+<label className="mb-1 block text-sm font-medium text-gray-300">
+  Adresse de chargement
+</label>
+<textarea
+  value={expediteurAdresse}
+  onChange={(e) => setExpediteurAdresse(e.target.value)}
+  className="w-full rounded bg-gray-800 p-3"
+  rows={3}
+/>
+</div>
+
+<div className="border-t border-gray-700 pt-4">
+  <h2 className="mb-3 text-xl font-semibold">Destinataire</h2>
+
+  <label className="mb-1 block text-sm font-medium text-gray-300">
+  Nom ou raison sociale du destinataire
+</label>
+<input
+  type="text"
+  value={destinataireNom}
+  onChange={(e) => setDestinataireNom(e.target.value)}
+  className="mb-3 w-full rounded bg-gray-800 p-3"
+/>
+
+<label className="mb-1 block text-sm font-medium text-gray-300">
+  Adresse de livraison
+</label>
+<textarea
+  value={destinataireAdresse}
+  onChange={(e) => setDestinataireAdresse(e.target.value)}
+  className="w-full rounded bg-gray-800 p-3"
+  rows={3}
+/>
+</div>
+
+
+
+
+
+       <div className="border-t border-gray-700 pt-4">
+  <h2 className="mb-3 text-xl font-semibold">
+    Caractéristiques du transport
+  </h2>
+
+  <label className="mb-1 block text-sm font-medium text-gray-300">
+    Distance (km)
+  </label>
+  <input
+    type="number"
+    value={distanceKm}
+    onChange={(e) => setDistanceKm(e.target.value)}
+    className="mb-3 w-full rounded bg-gray-800 p-3"
+    required
+  />
+
+  <label className="mb-1 block text-sm font-medium text-gray-300">
+    Poids total (tonnes)
+  </label>
+  <input
+    type="number"
+    value={poids}
+    onChange={(e) => setPoids(e.target.value)}
+    className="mb-3 w-full rounded bg-gray-800 p-3"
+    required
+  />
+
+  <label className="mb-1 block text-sm font-medium text-gray-300">
+    Nombre de palettes
+  </label>
+  <input
+    type="number"
+    value={palettes}
+    onChange={(e) => setPalettes(e.target.value)}
+    className="w-full rounded bg-gray-800 p-3"
+    required
+  />
+</div>
+
+
+        <div className="border-t border-gray-700 pt-4">
+  <h2 className="mb-3 text-xl font-semibold">
+    Chargement et déchargement
+  </h2>
+
+  <label className="mb-1 block text-sm text-gray-300">
+    Date et heure de chargement
+  </label>
+  <div className="mb-3 grid grid-cols-2 gap-3">
+    <input
+      type="date"
+      value={dateChargement}
+      onChange={(e) => setDateChargement(e.target.value)}
+      className="w-full rounded bg-gray-800 p-3"
+    />
+
+    <input
+      type="time"
+      value={heureChargement}
+      onChange={(e) => setHeureChargement(e.target.value)}
+      className="w-full rounded bg-gray-800 p-3"
+    />
+  </div>
+
+  <label className="mb-1 block text-sm text-gray-300">
+    Date et heure de déchargement
+  </label>
+  <div className="grid grid-cols-2 gap-3">
+    <input
+      type="date"
+      value={dateDechargement}
+      onChange={(e) => setDateDechargement(e.target.value)}
+      className="w-full rounded bg-gray-800 p-3"
+    />
+
+    <input
+      type="time"
+      value={heureDechargement}
+      onChange={(e) => setHeureDechargement(e.target.value)}
+      className="w-full rounded bg-gray-800 p-3"
+    />
+  </div>
+</div>
+<div className="border-t border-gray-700 pt-4">
+  <h2 className="mb-3 text-xl font-semibold">
+    Prestations et conditions particulières
+  </h2>
+
+ <label className="mb-1 block text-sm font-medium text-gray-300">
+  Prestations annexes
+  <span className="ml-1 text-gray-500">(facultatif)</span>
+</label>
+<textarea
+  placeholder="Ex. manutention, hayon, attente, ADR..."
+  value={prestationsAnnexes}
+  onChange={(e) => setPrestationsAnnexes(e.target.value)}
+  className="mb-3 w-full rounded bg-gray-800 p-3"
+  rows={3}
+/>
+
+<label className="mb-1 block text-sm font-medium text-gray-300">
+  Conditions particulières du transport
+  <span className="ml-1 text-gray-500">(facultatif)</span>
+</label>
+<textarea
+  value={conditionsParticulieres}
+  onChange={(e) => setConditionsParticulieres(e.target.value)}
+  className="w-full rounded bg-gray-800 p-3"
+  rows={3}
+
+  />
+</div>
         <button
           type="button"
           onClick={calculerPrix}

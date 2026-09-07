@@ -1,13 +1,47 @@
 import { createSupabaseServiceClient } from "../../../../../lib/supabase/service";
-import { getCompanyParams, getLogoBuffer } from "../../../../../lib/getCompanyParams";
+import {
+  getCompanyParams,
+  getLogoBuffer,
+} from "../../../../../lib/getCompanyParams";
 
 export const runtime = "nodejs";
 
+function formatDate(value?: string | null): string {
+  if (!value) return "";
+
+  const date = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString("fr-FR");
+}
+
+function formatDateTime(value?: string | null): string {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString("fr-FR");
+}
+
+function formatTime(value?: string | null): string {
+  if (!value) return "";
+
+  return value.slice(0, 5).replace(":", "h");
+}
+
 export async function GET(
-  request: Request,
+  _request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+
   const supabase = createSupabaseServiceClient();
   const { default: PDFDocument } = await import("pdfkit");
 
@@ -21,120 +55,596 @@ export async function GET(
     return new Response("Devis introuvable", { status: 404 });
   }
 
-  // Get company parameters
   const companyParams = devis.entreprise_id
     ? await getCompanyParams(devis.entreprise_id)
     : null;
 
-  // Get logo buffer if available
   const logoBuffer = companyParams?.logo_url
     ? await getLogoBuffer(companyParams.logo_url)
     : null;
 
-  const doc = new PDFDocument({ margin: 50 });
+  const doc = new PDFDocument({
+    size: "A4",
+    margin: 50,
+    bufferPages: true,
+  });
+
   const chunks: Buffer[] = [];
 
-  const pdfBufferPromise = new Promise<Buffer>((resolve) => {
+  const pdfBufferPromise = new Promise<Buffer>((resolve, reject) => {
     doc.on("data", (chunk) => chunks.push(chunk));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
   });
+
+  const pageWidth = doc.page.width;
+  const left = 50;
+  const right = pageWidth - 50;
+  const usableWidth = right - left;
 
   const prixHT = Number(devis.prix_ht || 0);
   const tva = Number(devis.tva || 0);
   const prixTTC = Number(devis.prix_ttc || devis.prix || 0);
+  const tvaRate = Number(companyParams?.tva_defaut || 20);
 
-  // Add logo if available
-  if (logoBuffer) {
-    doc.image(logoBuffer, 50, 40, { width: 100 });
-  } else {
-    // Fallback to text header
-    doc.fontSize(22).text(companyParams?.nom || "TRANSPORT SAAS", 50, 40);
-  }
+  const emissionDate = devis.created_at
+    ? new Date(devis.created_at)
+    : new Date();
 
-  // Company info
-  doc.fontSize(10);
-  if (companyParams?.adresse) doc.text(companyParams.adresse, 50, 70);
-  if (companyParams?.telephone || companyParams?.email) {
-    let contactLine = "";
-    if (companyParams.telephone) contactLine += `Tél: ${companyParams.telephone}`;
-    if (companyParams.email) {
-      if (contactLine) contactLine += ` | `;
-      contactLine += `Email: ${companyParams.email}`;
+  const emissionYear = emissionDate.getFullYear();
+
+  const numeroDevis = companyParams?.prefixe_devis
+    ? `${companyParams.prefixe_devis}${emissionYear}-${String(devis.id)
+        .slice(0, 8)
+        .toUpperCase()}`
+    : `DV-${emissionYear}-${String(devis.id)
+        .slice(0, 8)
+        .toUpperCase()}`;
+
+  function addPageIfNeeded(requiredHeight: number) {
+    if (doc.y + requiredHeight > doc.page.height - 70) {
+      doc.addPage();
+      doc.y = 50;
     }
-    doc.text(contactLine, 50, 85);
   }
-  if (companyParams?.site_web) doc.text(companyParams.site_web, 50, 100);
 
-  // Legal info
-  doc.fontSize(8);
-  if (companyParams?.siret) doc.text(`SIRET: ${companyParams.siret}`, 50, 115);
-  if (companyParams?.tva_intra) doc.text(`TVA Intra: ${companyParams.tva_intra}`, 50, 130);
+  function separator() {
+    addPageIfNeeded(20);
 
-  doc.fontSize(20).text("DEVIS TRANSPORT", 0, 110, {
-    align: "center",
-  });
-const tvaRate = companyParams?.tva_defaut || 20;
-const numeroDevis = companyParams?.prefixe_devis
-  ? `${companyParams.prefixe_devis}${new Date().getFullYear()}-${String(devis.id).slice(0, 8).toUpperCase()}`
-  : `DV-${new Date().getFullYear()}-${String(devis.id).slice(0, 8).toUpperCase()}`;
+    doc
+      .moveTo(left, doc.y)
+      .lineTo(right, doc.y)
+      .lineWidth(0.7)
+      .stroke();
 
-doc.fontSize(10).text(`Devis n° : ${numeroDevis}`, 50, 150);
-  
-  doc.text(`Date d'émission : ${new Date().toLocaleDateString("fr-FR")}`, 50, 165);
- if (devis.statut && devis.statut !== "Brouillon") {
-  doc.text(`Statut : ${devis.statut}`, 50, 180);
-}
+    doc.moveDown(1);
+  }
 
-  doc.moveTo(50, 205).lineTo(545, 205).stroke();
+  function sectionTitle(title: string) {
+    addPageIfNeeded(35);
 
-  doc.fontSize(14).text("Client", 50, 230);
-  doc.fontSize(11).text(devis.client || "Non renseigné", 50, 255);
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(13)
+      .text(title, left);
 
-  doc.fontSize(14).text("Transport", 300, 230);
-  doc.fontSize(11).text(`Départ : ${devis.depart || ""}`, 300, 255);
-  doc.text(`Arrivée : ${devis.arrivee || ""}`, 300, 272);
-  doc.text(`Distance : ${devis.distance_km || 0} km`, 300, 289);
-  doc.text(`Date transport : ${devis.date_transport || ""}`, 300, 306);
+    doc.moveDown(0.5);
+  }
 
-  doc.moveTo(50, 345).lineTo(545, 345).stroke();
+  function detailLine(
+    label: string,
+    value?: string | number | null
+  ) {
+    if (
+      value === null ||
+      value === undefined ||
+      String(value).trim() === ""
+    ) {
+      return;
+    }
 
-  doc.fontSize(14).text("Marchandise", 50, 370);
-  doc.fontSize(11).text(`Poids : ${devis.poids || 0} tonnes`, 50, 395);
-  doc.text(`Palettes : ${devis.palettes || 0}`, 50, 412);
+    addPageIfNeeded(20);
 
-  doc.fontSize(14).text("Montants", 300, 370);
-  doc.fontSize(11).text(`Prix HT : ${prixHT.toFixed(2)} EUR`, 300, 395);
-  doc.text(`TVA ${tvaRate} % : ${tva.toFixed(2)} EUR`, 300, 412);
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text(`${label} : `, {
+        continued: true,
+      });
 
- doc
-  .roundedRect(295, 435, 210, 45, 8)
-  .stroke();
+    doc
+      .font("Helvetica")
+      .text(String(value));
 
-doc
-  .fontSize(16)
-  .text(`Total TTC : ${prixTTC.toFixed(2)} EUR`, 310, 448);
+    doc.moveDown(0.25);
+  }
 
-  doc.moveTo(50, 500).lineTo(545, 500).stroke();
+  function paragraph(
+    label: string,
+    value?: string | null
+  ) {
+    if (!value?.trim()) return;
 
-doc.fontSize(10).text("Conditions :", 50, 520);
-doc.text(`- Devis valable selon ${companyParams?.conditions_paiement || "nos conditions standards"}`, 50, 540);
-doc.text("- Prix calculé selon distance, poids, palettes et conditions de transport.", 50, 555);
-doc.text("- Sous réserve de disponibilité chauffeur et véhicule.", 50, 570);
+    addPageIfNeeded(55);
 
-doc.fontSize(10).text("Signature client :", 50, 610);
-doc.rect(50, 630, 200, 50).stroke();
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text(label);
 
-doc.fontSize(9).text(companyParams?.mentions_legales || "Document généré automatiquement par Transport SaaS.", 50, 720, {
-  align: "center",
-});
-doc.end();
+    doc
+      .font("Helvetica")
+      .fontSize(10)
+      .text(value, {
+        width: usableWidth,
+        lineGap: 2,
+      });
+
+    doc.moveDown(0.7);
+  }
+
+  // =========================================================
+  // EN-TÊTE ENTREPRISE
+  // =========================================================
+
+  if (logoBuffer) {
+    try {
+      doc.image(logoBuffer, left, 40, {
+        fit: [110, 65],
+      });
+    } catch {
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(20)
+        .text(companyParams?.nom || "TransportERP", left, 45);
+    }
+  } else {
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(20)
+      .text(companyParams?.nom || "TransportERP", left, 45);
+  }
+
+  const companyInfoY = logoBuffer ? 112 : 75;
+
+  doc
+    .font("Helvetica")
+    .fontSize(9);
+
+  let headerY = companyInfoY;
+
+  if (companyParams?.adresse) {
+    doc.text(companyParams.adresse, left, headerY, {
+      width: 250,
+    });
+    headerY = doc.y + 2;
+  }
+
+  const contactParts: string[] = [];
+
+  if (companyParams?.telephone) {
+    contactParts.push(`Tél. : ${companyParams.telephone}`);
+  }
+
+  if (companyParams?.email) {
+    contactParts.push(`Email : ${companyParams.email}`);
+  }
+
+  if (contactParts.length > 0) {
+    doc.text(contactParts.join(" | "), left, headerY, {
+      width: 300,
+    });
+    headerY = doc.y + 2;
+  }
+
+  if (companyParams?.site_web) {
+    doc.text(companyParams.site_web, left, headerY);
+    headerY = doc.y + 2;
+  }
+
+  const legalParts: string[] = [];
+
+  if (companyParams?.forme_juridique) {
+    legalParts.push(companyParams.forme_juridique);
+  }
+
+  if (
+    companyParams?.capital_social !== null &&
+    companyParams?.capital_social !== undefined &&
+    Number(companyParams.capital_social) > 0
+  ) {
+    legalParts.push(
+      `Capital social : ${Number(
+        companyParams.capital_social
+      ).toLocaleString("fr-FR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })} €`
+    );
+  }
+
+  if (companyParams?.rcs_ville) {
+    legalParts.push(`RCS ${companyParams.rcs_ville}`);
+  }
+
+  if (companyParams?.siret) {
+    legalParts.push(`SIRET : ${companyParams.siret}`);
+  }
+
+  if (companyParams?.tva_intra) {
+    legalParts.push(`TVA intracommunautaire : ${companyParams.tva_intra}`);
+  }
+
+  if (legalParts.length > 0) {
+    doc
+      .fontSize(8)
+      .text(legalParts.join(" • "), left, headerY, {
+        width: usableWidth,
+      });
+  }
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(20)
+    .text("DEVIS TRANSPORT", 300, 55, {
+      width: 245,
+      align: "right",
+    });
+
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .text(`Devis n° : ${numeroDevis}`, 300, 90, {
+      width: 245,
+      align: "right",
+    });
+
+  doc.text(
+    `Date d'émission : ${emissionDate.toLocaleDateString("fr-FR")}`,
+    300,
+    107,
+    {
+      width: 245,
+      align: "right",
+    }
+  );
+
+  if (devis.validite_jusqu_au) {
+    doc.text(
+      `Valable jusqu'au : ${formatDate(devis.validite_jusqu_au)}`,
+      300,
+      124,
+      {
+        width: 245,
+        align: "right",
+      }
+    );
+  }
+
+
+
+  doc.y = Math.max(doc.y, 175);
+
+  separator();
+
+  // =========================================================
+  // CLIENT
+  // =========================================================
+
+  sectionTitle("Client");
+
+  detailLine("Client", devis.client || "Non renseigné");
+
+  if (devis.reference_client) {
+    detailLine("Référence / bon de commande", devis.reference_client);
+  }
+
+  separator();
+
+  // =========================================================
+  // EXPÉDITEUR / DESTINATAIRE
+  // =========================================================
+
+  sectionTitle("Organisation du transport");
+
+  if (devis.expediteur_nom) {
+    detailLine("Expéditeur", devis.expediteur_nom);
+  }
+
+  detailLine(
+    "Adresse de chargement",
+    devis.expediteur_adresse || devis.depart
+  );
+
+  if (devis.destinataire_nom) {
+    detailLine("Destinataire", devis.destinataire_nom);
+  }
+
+  detailLine(
+    "Adresse de livraison",
+    devis.destinataire_adresse || devis.arrivee
+  );
+
+  if (devis.distance_km !== null && devis.distance_km !== undefined) {
+    detailLine("Distance", `${devis.distance_km} km`);
+  }
+
+  separator();
+
+  // =========================================================
+  // CHARGEMENT / DÉCHARGEMENT
+  // =========================================================
+
+  sectionTitle("Chargement et déchargement");
+
+  if (devis.date_chargement) {
+    const chargement =
+      `${formatDate(devis.date_chargement)}` +
+      (devis.heure_chargement
+        ? ` à ${formatTime(devis.heure_chargement)}`
+        : "");
+
+    detailLine("Chargement prévu", chargement);
+  } else if (devis.date_transport) {
+    detailLine(
+      "Date de transport",
+      formatDate(devis.date_transport)
+    );
+  }
+
+  if (devis.date_dechargement) {
+    const dechargement =
+      `${formatDate(devis.date_dechargement)}` +
+      (devis.heure_dechargement
+        ? ` à ${formatTime(devis.heure_dechargement)}`
+        : "");
+
+    detailLine("Déchargement prévu", dechargement);
+  }
+
+  separator();
+
+  // =========================================================
+  // MARCHANDISE
+  // =========================================================
+
+  sectionTitle("Marchandise");
+
+  detailLine(
+    "Nature",
+    devis.nature_marchandise || "Non renseignée"
+  );
+
+  if (devis.poids !== null && devis.poids !== undefined) {
+    detailLine("Poids total", `${devis.poids} tonnes`);
+  }
+
+  if (devis.palettes !== null && devis.palettes !== undefined) {
+    detailLine("Nombre de palettes", devis.palettes);
+  }
+
+  if (devis.nombre_colis !== null && devis.nombre_colis !== undefined) {
+    detailLine("Nombre de colis", devis.nombre_colis);
+  }
+
+  if (devis.volume_m3 !== null && devis.volume_m3 !== undefined) {
+    detailLine("Volume total", `${devis.volume_m3} m³`);
+  }
+
+  separator();
+
+  // =========================================================
+  // PRESTATIONS ET CONDITIONS PARTICULIÈRES
+  // =========================================================
+
+  if (devis.prestations_annexes || devis.conditions_particulieres) {
+    sectionTitle("Prestations et conditions particulières");
+
+    paragraph(
+      "Prestations annexes",
+      devis.prestations_annexes
+    );
+
+    paragraph(
+      "Conditions particulières",
+      devis.conditions_particulieres
+    );
+
+    separator();
+  }
+
+  // =========================================================
+  // MONTANTS
+  // =========================================================
+
+  sectionTitle("Montants");
+
+  detailLine(
+    "Prix HT",
+    `${prixHT.toFixed(2)} €`
+  );
+
+  detailLine(
+    `TVA ${tvaRate} %`,
+    `${tva.toFixed(2)} €`
+  );
+
+  addPageIfNeeded(70);
+
+  const totalBoxY = doc.y + 8;
+
+  doc
+    .roundedRect(left, totalBoxY, usableWidth, 48, 8)
+    .lineWidth(1)
+    .stroke();
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(16)
+    .text(
+      `TOTAL TTC : ${prixTTC.toFixed(2)} €`,
+      left + 15,
+      totalBoxY + 15,
+      {
+        width: usableWidth - 30,
+        align: "right",
+      }
+    );
+
+  doc.y = totalBoxY + 65;
+
+  separator();
+
+  // =========================================================
+  // CONDITIONS COMMERCIALES
+  // =========================================================
+
+  sectionTitle("Conditions commerciales");
+
+  if (devis.validite_jusqu_au) {
+    detailLine(
+      "Validité de l'offre",
+      `Jusqu'au ${formatDate(devis.validite_jusqu_au)}`
+    );
+  } else {
+    const dureeValidite =
+      Number(companyParams?.duree_validite_devis_jours || 30);
+
+    detailLine(
+      "Validité de l'offre",
+      `${dureeValidite} jours à compter de la date d'émission`
+    );
+  }
+
+  if (companyParams?.conditions_paiement) {
+    detailLine(
+      "Conditions de paiement",
+      companyParams.conditions_paiement
+    );
+  }
+
+  doc.moveDown(0.5);
+
+  doc
+    .font("Helvetica")
+    .fontSize(9)
+    .text(
+      "Les prix et conditions indiqués dans le présent devis s'appliquent aux prestations décrites ci-dessus.",
+      {
+        width: usableWidth,
+      }
+    );
+
+  doc.moveDown(0.5);
+
+  doc.text(
+    "Toute modification des caractéristiques du transport pourra entraîner une révision du prix et des conditions de réalisation.",
+    {
+      width: usableWidth,
+    }
+  );
+
+  doc.moveDown(1);
+
+  separator();
+
+  // =========================================================
+  // ACCEPTATION
+  // =========================================================
+
+  sectionTitle("Acceptation du devis");
+
+  doc
+    .font("Helvetica")
+    .fontSize(9)
+    .text(
+      "Bon pour accord. Le client reconnaît accepter les prestations, prix et conditions mentionnés dans le présent devis.",
+      {
+        width: usableWidth,
+      }
+    );
+
+  doc.moveDown(1);
+
+  addPageIfNeeded(120);
+
+  const signatureY = doc.y;
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(9)
+    .text("Date :", left, signatureY);
+
+  doc.text("Nom et qualité du signataire :", 200, signatureY);
+
+  doc
+    .font("Helvetica-Bold")
+    .text("Signature précédée de la mention « Bon pour accord » :", left, signatureY + 30);
+
+  doc
+    .rect(left, signatureY + 48, usableWidth, 75)
+    .lineWidth(0.7)
+    .stroke();
+
+  doc.y = signatureY + 140;
+
+  // =========================================================
+  // MENTIONS / PIED DE PAGE
+  // =========================================================
+
+  addPageIfNeeded(80);
+
+  separator();
+
+  if (companyParams?.mentions_legales) {
+    doc
+      .font("Helvetica")
+      .fontSize(8)
+      .text(companyParams.mentions_legales, {
+        width: usableWidth,
+        align: "center",
+      });
+
+    doc.moveDown(0.5);
+  }
+
+
+
+  // Numérotation des pages
+  const range = doc.bufferedPageRange();
+
+  for (
+    let pageIndex = range.start;
+    pageIndex < range.start + range.count;
+    pageIndex++
+  ) {
+    doc.switchToPage(pageIndex);
+
+    doc
+      .font("Helvetica")
+      .fontSize(8)
+      .text(
+        `Page ${pageIndex + 1} / ${range.count}`,
+        left,
+        doc.page.height - doc.page.margins.bottom - 10,
+        {
+          width: usableWidth,
+          align: "right",
+          lineBreak: false,
+        }
+      );
+  }
+
+  doc.end();
 
   const pdfBuffer = await pdfBufferPromise;
 
   return new Response(new Uint8Array(pdfBuffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="devis-${String(devis.id).slice(0, 8)}.pdf"`,
+      "Content-Disposition": `inline; filename="devis-${String(
+        devis.id
+      ).slice(0, 8)}.pdf"`,
     },
   });
 }
