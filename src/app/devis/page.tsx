@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
@@ -108,9 +108,8 @@ export default function DevisPage() {
       // Calculer les indicateurs
       const total = data?.length || 0;
       const montantTotal = data?.reduce((sum: number, devis: { prix_ttc: number | null; prix: number | null }) => sum + (devis.prix_ttc || devis.prix || 0), 0) || 0;
-      const acceptes = data?.filter(d => d.statut === "Accepté").length || 0;
-      const refuses = data?.filter(d => d.statut === "Refusé").length || 0;
-
+      const acceptes = data?.filter((d: Devis) => d.statut === "Accepté").length || 0;
+const refuses = data?.filter((d: Devis) => d.statut === "Refusé").length || 0;
       setTotalDevis(total);
       setTotalMontant(montantTotal);
       setTotalAcceptes(acceptes);

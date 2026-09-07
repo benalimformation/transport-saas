@@ -132,7 +132,7 @@ export default function AdminPage() {
 
       // Extraire les entreprises uniques pour le filtre
       const uniqueEntreprises = Array.from(new Set<string>(
-        allProfils.map((p: Profil) => p.entreprise_id).filter((id): id is string => id !== null)
+        allProfils.map((p: Profil) => p.entreprise_id).filter((id: string | null): id is string => id !== null)
       ))
       setEntreprises(uniqueEntreprises)
 

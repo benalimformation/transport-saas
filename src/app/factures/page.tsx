@@ -116,8 +116,8 @@ export default function FacturesPage() {
 
       // Calculer les totaux
       const total = data?.reduce((sum: number, facture: { montant_ttc: number | null }) => sum + (facture.montant_ttc || 0), 0) || 0;
-      const totalPaye = data?.filter(f => f.statut === "Payée")
-        .reduce((sum, facture) => sum + (facture.montant_ttc || 0), 0) || 0;
+     const totalPaye = data?.filter((f: Facture) => f.statut === "Payée")
+  .reduce((sum: number, facture: Facture) => sum + (facture.montant_ttc || 0), 0) || 0;
       const totalNonPaye = total - totalPaye;
 
       setTotalFactures(total);
