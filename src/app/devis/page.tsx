@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
@@ -162,10 +162,37 @@ const refuses = data?.filter((d: Devis) => d.statut === "Refusé").length || 0;
       alert("Erreur lors de la suppression: " + (err as Error).message);
     }
   }
-
-  async function creerLivraison(item: Devis) {
+    async function changerStatutDevis(
+    item: Devis,
+    nouveauStatut: "Envoyé" | "Accepté" | "Refusé"
+  ) {
     if (!entrepriseId) {
       alert("Entreprise introuvable.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("devis")
+      .update({ statut: nouveauStatut })
+      .eq("id", item.id)
+      .eq("entreprise_id", entrepriseId);
+
+    if (error) {
+      alert("Erreur lors du changement de statut : " + error.message);
+      return;
+    }
+
+    await chargerDevis(entrepriseId);
+  }
+
+    async function creerLivraison(item: Devis) {
+    if (!entrepriseId) {
+      alert("Entreprise introuvable.");
+      return;
+    }
+
+    if (item.statut !== "Accepté") {
+      alert("Seul un devis accepté peut être transformé en livraison.");
       return;
     }
 
@@ -173,6 +200,7 @@ const refuses = data?.filter((d: Devis) => d.statut === "Refusé").length || 0;
       .from("livraisons")
       .insert([
         {
+          devis_id: item.id,
           client: item.client,
           adresse_depart: item.depart,
           adresse_arrivee: item.arrivee,
@@ -188,6 +216,11 @@ const refuses = data?.filter((d: Devis) => d.statut === "Refusé").length || 0;
       .single();
 
     if (error) {
+      if (error.code === "23505") {
+        alert("Une livraison a déjà été créée pour ce devis.");
+        return;
+      }
+
       alert(error.message);
       return;
     }
@@ -369,13 +402,41 @@ const refuses = data?.filter((d: Devis) => d.statut === "Refusé").length || 0;
                   >
                     Modifier
                   </a>
+                                    {(item.statut === "Brouillon" || !item.statut) && (
+                    <button
+                      onClick={() => changerStatutDevis(item, "Envoyé")}
+                      className="ml-3 rounded bg-cyan-600 px-4 py-2"
+                    >
+                      Marquer envoyé
+                    </button>
+                  )}
 
-                  <button
-                    onClick={() => creerLivraison(item)}
-                    className="ml-3 rounded bg-green-600 px-4 py-2"
-                  >
-                    Créer livraison
-                  </button>
+                  {item.statut === "Envoyé" && (
+                    <>
+                      <button
+                        onClick={() => changerStatutDevis(item, "Accepté")}
+                        className="ml-3 rounded bg-green-600 px-4 py-2"
+                      >
+                        Accepter
+                      </button>
+
+                      <button
+                        onClick={() => changerStatutDevis(item, "Refusé")}
+                        className="ml-3 rounded bg-orange-600 px-4 py-2"
+                      >
+                        Refuser
+                      </button>
+                    </>
+                  )}
+
+                 {item.statut === "Accepté" && (
+  <button
+    onClick={() => creerLivraison(item)}
+    className="ml-3 rounded bg-green-600 px-4 py-2"
+  >
+    Créer livraison
+  </button>
+)}
 
                   <a
                     href={`/api/devis/pdf/${item.id}`}

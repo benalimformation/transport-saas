@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
@@ -95,7 +95,7 @@ export default function LivraisonsPage() {
     }
 
     const { data: chauffeursData, error: chauffeursError } = await supabase
-      .from("chauffeurs")
+      .from("Chauffeurs")
       .select("id, nom")
       .eq("entreprise_id", idEntreprise);
 
