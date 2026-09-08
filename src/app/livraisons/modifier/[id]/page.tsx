@@ -58,7 +58,7 @@ export default function ModifierLivraisonPage() {
       const entrepriseId = profil.entreprise_id;
 
       const { data: chauffeursData } = await supabase
-        .from("chauffeurs")
+        .from("Chauffeurs")
         .select("id, nom")
         .eq("entreprise_id", entrepriseId);
 

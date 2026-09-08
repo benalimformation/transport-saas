@@ -71,7 +71,7 @@ const userId = user?.id;
 
     try {
       const { data, error } = await supabase
-        .from("chauffeurs")
+       .from("Chauffeurs")
         .select("*")
         .eq("entreprise_id", idEntreprise)
         .order("nom", { ascending: true });
@@ -93,7 +93,7 @@ const userId = user?.id;
 
     try {
       const { error } = await supabase
-        .from("chauffeurs")
+       .from("Chauffeurs")
         .delete()
         .eq("id", id)
         .eq("entreprise_id", entrepriseId);

@@ -31,7 +31,7 @@ export default function NouveauChauffeur() {
       return;
     }
 
-    const { error } = await supabase.from("chauffeurs").insert({
+    const { error } = await supabase.from("Chauffeurs").insert({
       nom,
       telephone,
       email,
