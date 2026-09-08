@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
@@ -7,6 +7,7 @@ import { getStatusBadgeClass } from "../../lib/statusBadge";
 
 type Devis = {
   id: string;
+  numero_devis: string | null;
   client: string;
   depart: string;
   arrivee: string;
@@ -323,13 +324,21 @@ const refuses = data?.filter((d: Devis) => d.statut === "Refusé").length || 0;
             ) : (
               devis.map((item) => (
                 <div key={item.id} className="border-b border-gray-800 py-5">
-                  <div className="mb-3 flex items-center gap-3">
-                    <p className="text-2xl font-bold">{item.client}</p>
+                 <div className="mb-3 flex items-center gap-3">
+  <div>
+    <p className="text-2xl font-bold">{item.client}</p>
 
-                    <span className={getStatusBadgeClass(item.statut || "Brouillon")}>
-                      {item.statut || "Brouillon"}
-                    </span>
-                  </div>
+    {item.numero_devis && (
+      <p className="text-sm text-gray-400">
+        Devis n° {item.numero_devis}
+      </p>
+    )}
+  </div>
+
+  <span className={getStatusBadgeClass(item.statut || "Brouillon")}>
+    {item.statut || "Brouillon"}
+  </span>
+</div>
 
                   <p>
                     Trajet : {item.depart} → {item.arrivee}

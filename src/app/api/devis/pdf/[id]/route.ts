@@ -93,13 +93,9 @@ export async function GET(
 
   const emissionYear = emissionDate.getFullYear();
 
-  const numeroDevis = companyParams?.prefixe_devis
-    ? `${companyParams.prefixe_devis}${emissionYear}-${String(devis.id)
-        .slice(0, 8)
-        .toUpperCase()}`
-    : `DV-${emissionYear}-${String(devis.id)
-        .slice(0, 8)
-        .toUpperCase()}`;
+ const numeroDevis =
+  devis.numero_devis ||
+  `DV-${emissionYear}-${String(devis.id).slice(0, 8).toUpperCase()}`;
 
   function addPageIfNeeded(requiredHeight: number) {
     if (doc.y + requiredHeight > doc.page.height - 70) {
