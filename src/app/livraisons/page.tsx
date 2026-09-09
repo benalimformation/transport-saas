@@ -149,24 +149,44 @@ export default function LivraisonsPage() {
   }
 
   async function changerStatutLivraison(id: string, statut: string) {
-    try {
-      const { error } = await supabase
+  try {
+    if (statut === "Livrée") {
+      const { data: livraison, error: livraisonError } = await supabase
         .from("livraisons")
-        .update({ statut })
+        .select("signature_chauffeur, signature_destinataire")
         .eq("id", id)
-        .eq("entreprise_id", entrepriseId);
+        .eq("entreprise_id", entrepriseId)
+        .single();
 
-      if (error) {
-        throw error;
+      if (livraisonError) {
+        throw livraisonError;
       }
 
-      if (entrepriseId) {
-        fetchData(entrepriseId);
+      if (!livraison.signature_chauffeur || !livraison.signature_destinataire) {
+        alert(
+          "La livraison ne peut pas être terminée tant que les signatures du chauffeur et du destinataire ne sont pas enregistrées."
+        );
+        return;
       }
-    } catch (err) {
-      alert("Erreur lors de la mise à jour: " + (err as Error).message);
     }
+
+    const { error } = await supabase
+      .from("livraisons")
+      .update({ statut })
+      .eq("id", id)
+      .eq("entreprise_id", entrepriseId);
+
+    if (error) {
+      throw error;
+    }
+
+    if (entrepriseId) {
+      fetchData(entrepriseId);
+    }
+  } catch (err) {
+    alert("Erreur lors de la mise à jour: " + (err as Error).message);
   }
+}
 
   async function checkFactureExists(livraisonId: string): Promise<boolean> {
     if (!entrepriseId) return false;
