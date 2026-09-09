@@ -98,6 +98,15 @@ export default function ModifierLivraisonPage() {
 
   async function modifierLivraison(e: React.FormEvent) {
     e.preventDefault();
+if (
+  statut === "Livrée" &&
+  (!signatureChauffeur || !signatureDestinataire)
+) {
+  alert(
+    "La livraison ne peut pas être marquée comme livrée tant que les signatures du chauffeur et du destinataire ne sont pas enregistrées."
+  );
+  return;
+}
 
     const { error } = await supabase
       .from("livraisons")
