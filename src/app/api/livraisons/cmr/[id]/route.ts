@@ -1,8 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from "next/server";
 import { createSupabaseProxyClient } from "../../../../../lib/supabase/proxy";
-import { getCompanyParams, getLogoBuffer } from "../../../../../lib/getCompanyParams";
+import {
+  getCompanyParams,
+  getLogoBuffer,
+} from "../../../../../lib/getCompanyParams";
 
 export const runtime = "nodejs";
+
+type DevisLie = {
+  expediteur_nom: string | null;
+  expediteur_adresse: string | null;
+  destinataire_nom: string | null;
+  destinataire_adresse: string | null;
+  date_chargement: string | null;
+  heure_chargement: string | null;
+  conditions_particulieres: string | null;
+};
+
+function formatDateFr(value: string | null | undefined) {
+  if (!value) return "";
+
+  const parts = value.split("-");
+
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+
+  return value;
+}
 
 export async function GET(
   request: NextRequest,
@@ -10,64 +35,124 @@ export async function GET(
 ) {
   const { id } = await context.params;
 
-  // Create Supabase client using the same proxy mechanism as subscription route
-  const { supabase, getResponse } = createSupabaseProxyClient(request);
+  const { supabase } = createSupabaseProxyClient(request);
 
-  // Check user authentication using getUser() for server-side routes
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
   if (authError || !user) {
     return new Response("Non autorisé", { status: 401 });
   }
 
-    // Get user profile to get entreprise_id
-    const { data: profil, error: profilError } = await supabase
-      .from("profils")
-      .select("entreprise_id")
-      .eq("id", user.id)
-      .single();
+  const { data: profil, error: profilError } = await supabase
+    .from("profils")
+    .select("entreprise_id")
+    .eq("id", user.id)
+    .single();
 
   if (profilError || !profil?.entreprise_id) {
-    return new Response("Profil utilisateur introuvable", { status: 401 });
+    return new Response("Profil utilisateur introuvable", {
+      status: 401,
+    });
   }
+
+  const entrepriseId = profil.entreprise_id;
 
   const { default: PDFDocument } = await import("pdfkit");
 
-  // Load delivery with enterprise filter
   const { data: livraison, error } = await supabase
     .from("livraisons")
     .select("*")
     .eq("id", id)
-    .eq("entreprise_id", profil.entreprise_id)
+    .eq("entreprise_id", entrepriseId)
     .single();
 
   if (error || !livraison) {
-    return new Response("Livraison introuvable", { status: 404 });
+    return new Response("Livraison introuvable", {
+      status: 404,
+    });
   }
 
-  const { data: chauffeur } = await supabase
-    .from("chauffeurs")
-    .select("nom")
-    .eq("id", livraison.chauffeur_id)
-    .single();
+  let devis: DevisLie | null = null;
 
-  const { data: camion } = await supabase
-    .from("camions")
-    .select("immatriculation")
-    .eq("id", livraison.camion_id)
-    .single();
+  if (livraison.devis_id) {
+    const { data: devisData } = await supabase
+      .from("devis")
+      .select(`
+        expediteur_nom,
+        expediteur_adresse,
+        destinataire_nom,
+        destinataire_adresse,
+        date_chargement,
+        heure_chargement,
+        conditions_particulieres
+      `)
+      .eq("id", livraison.devis_id)
+      .eq("entreprise_id", entrepriseId)
+      .maybeSingle();
 
-  // Get company parameters
+    devis = devisData;
+  }
+
+  const { data: chauffeur } = livraison.chauffeur_id
+    ? await supabase
+        .from("Chauffeurs")
+        .select("nom")
+        .eq("id", livraison.chauffeur_id)
+        .eq("entreprise_id", entrepriseId)
+        .maybeSingle()
+    : { data: null };
+
+  const { data: camion } = livraison.camion_id
+    ? await supabase
+        .from("camions")
+        .select("immatriculation")
+        .eq("id", livraison.camion_id)
+        .eq("entreprise_id", entrepriseId)
+        .maybeSingle()
+    : { data: null };
+
   const companyParams = livraison.entreprise_id
     ? await getCompanyParams(livraison.entreprise_id)
     : null;
 
-  // Get logo buffer if available
   const logoBuffer = companyParams?.logo_url
     ? await getLogoBuffer(companyParams.logo_url)
     : null;
 
-  const doc = new PDFDocument({ margin: 35 });
+  const expediteurNom =
+    devis?.expediteur_nom ||
+    livraison.client ||
+    "";
+
+  const expediteurAdresse =
+    devis?.expediteur_adresse ||
+    livraison.adresse_depart ||
+    "";
+
+  const destinataireNom =
+    livraison.destinataire ||
+    devis?.destinataire_nom ||
+    "";
+
+  const datePriseEnCharge =
+    formatDateFr(devis?.date_chargement) ||
+    formatDateFr(livraison.date_livraison);
+
+  const heurePriseEnCharge =
+    devis?.heure_chargement?.slice(0, 5) ||
+    livraison.heure_limite?.slice(0, 5) ||
+    "";
+
+  const conventionsParticulieres =
+    devis?.conditions_particulieres || "";
+
+  const doc = new PDFDocument({
+    margin: 35,
+  });
+
   const chunks: Buffer[] = [];
 
   const pdfBufferPromise = new Promise<Buffer>((resolve) => {
@@ -75,137 +160,424 @@ export async function GET(
     doc.on("end", () => resolve(Buffer.concat(chunks)));
   });
 
-  function box(x: number, y: number, w: number, h: number, title: string, value?: string) {
+  function box(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    title: string,
+    value?: string
+  ) {
     doc.rect(x, y, w, h).stroke();
-    doc.fontSize(8).text(title, x + 5, y + 5);
-    doc.fontSize(10).text(value || "Non renseigné", x + 5, y + 22, {
-      width: w - 10,
-      height: h - 25,
-    });
+
+    doc
+      .fontSize(8)
+      .text(title, x + 5, y + 5);
+
+    doc
+      .fontSize(10)
+      .text(value || "Non renseigné", x + 5, y + 22, {
+        width: w - 10,
+        height: h - 25,
+      });
   }
 
-  const dateLivraison = livraison.date_livraison
-    ? new Date(livraison.date_livraison).toLocaleDateString("fr-FR")
-    : "Non renseignée";
-
-  const heureLimite = livraison.heure_limite
-    ? livraison.heure_limite.slice(0, 5)
-    : "Non renseignée";
-
-  // Add company header with logo
   if (logoBuffer) {
-    doc.image(logoBuffer, 35, 25, { width: 80 });
+    doc.image(logoBuffer, 35, 25, {
+      width: 80,
+    });
   } else {
-    doc.fontSize(12).text(companyParams?.nom || "TRANSPORT SAAS", 35, 30);
+    doc
+      .fontSize(12)
+      .text(
+        companyParams?.nom || "TransportERP",
+        35,
+        30
+      );
   }
 
-  // Company contact info
   doc.fontSize(7);
-  if (companyParams?.adresse) doc.text(companyParams.adresse, 35, 45);
-  if (companyParams?.telephone || companyParams?.email) {
+
+  if (companyParams?.adresse) {
+    doc.text(companyParams.adresse, 35, 45);
+  }
+
+  if (
+    companyParams?.telephone ||
+    companyParams?.email
+  ) {
     let contactLine = "";
-    if (companyParams.telephone) contactLine += `Tél: ${companyParams.telephone}`;
+
+    if (companyParams.telephone) {
+      contactLine += `Tél: ${companyParams.telephone}`;
+    }
+
     if (companyParams.email) {
-      if (contactLine) contactLine += ` | `;
+      if (contactLine) {
+        contactLine += " | ";
+      }
+
       contactLine += `Email: ${companyParams.email}`;
     }
+
     doc.text(contactLine, 35, 55);
   }
-  if (companyParams?.site_web) doc.text(companyParams.site_web, 35, 65);
 
-  // Legal info
+  if (companyParams?.site_web) {
+    doc.text(companyParams.site_web, 35, 65);
+  }
+
   doc.fontSize(6);
-  if (companyParams?.siret) doc.text(`SIRET: ${companyParams.siret}`, 35, 75);
-  if (companyParams?.tva_intra) doc.text(`TVA Intra: ${companyParams.tva_intra}`, 35, 85);
 
-  // CMR Title (moved down to make room for company header)
-  doc.fontSize(18).text("LETTRE DE VOITURE INTERNATIONALE", 35, 105);
-  doc.fontSize(20).text("CMR", 480, 105);
-  doc.fontSize(8).text("Convention relative au contrat de transport international de marchandises par route", 35, 130);
+  if (companyParams?.siret) {
+    doc.text(
+      `SIRET: ${companyParams.siret}`,
+      35,
+      75
+    );
+  }
 
-  doc.fontSize(9).text(`CMR n° : CMR-${String(livraison.id).slice(0, 8).toUpperCase()}`, 35, 150);
-  doc.text(`Date édition : ${new Date().toLocaleDateString("fr-FR")}`, 250, 150);
-  doc.text(`Statut : ${livraison.statut || "Prévue"}`, 420, 150);
+  if (companyParams?.tva_intra) {
+    doc.text(
+      `TVA Intra: ${companyParams.tva_intra}`,
+      35,
+      85
+    );
+  }
 
-  box(35, 95, 250, 70, "1. Expéditeur", livraison.client || "");
-  box(285, 95, 270, 70, "2. Destinataire", livraison.destinataire || livraison.client || "");
+  doc
+    .fontSize(18)
+    .text(
+      "LETTRE DE VOITURE INTERNATIONALE",
+      35,
+      105
+    );
 
-  box(35, 165, 250, 70, "3. Lieu prévu pour la livraison", livraison.adresse_arrivee || "");
+  doc
+    .fontSize(20)
+    .text("CMR", 480, 105);
+
+  doc
+    .fontSize(8)
+    .text(
+      "Convention relative au contrat de transport international de marchandises par route",
+      35,
+      130
+    );
+
+  doc
+    .fontSize(9)
+    .text(
+      `CMR n° : CMR-${String(livraison.id)
+        .slice(0, 8)
+        .toUpperCase()}`,
+      35,
+      150
+    );
+
+  doc.text(
+    `Date édition : ${new Date().toLocaleDateString(
+      "fr-FR"
+    )}`,
+    250,
+    150
+  );
+
+  doc.text(
+    `Statut : ${livraison.statut || "Prévue"}`,
+    420,
+    150
+  );
+
+  box(
+    35,
+    170,
+    250,
+    70,
+    "1. Expéditeur",
+    `${expediteurNom}${
+      expediteurAdresse
+        ? `\n${expediteurAdresse}`
+        : ""
+    }`
+  );
+
   box(
     285,
-    165,
+    170,
+    270,
+    70,
+    "2. Destinataire",
+    destinataireNom
+  );
+
+  box(
+    35,
+    240,
+    250,
+    70,
+    "3. Lieu prévu pour la livraison",
+    livraison.adresse_arrivee || ""
+  );
+
+  box(
+    285,
+    240,
     270,
     70,
     "4. Lieu et date de prise en charge",
-    `${livraison.lieu_prise_en_charge || livraison.adresse_depart || ""}\nDate : ${dateLivraison}\nHeure : ${heureLimite}`
+    `${expediteurAdresse || livraison.adresse_depart || ""}${
+      datePriseEnCharge
+        ? `\nDate : ${datePriseEnCharge}`
+        : ""
+    }${
+      heurePriseEnCharge
+        ? `\nHeure : ${heurePriseEnCharge}`
+        : ""
+    }`
   );
 
-  box(35, 235, 250, 55, "5. Documents annexés", livraison.documents_annexes || "Bon de transport");
-  box(285, 235, 270, 55, "6. Marques et numéros", String(livraison.id).slice(0, 8));
+  box(
+    35,
+    310,
+    250,
+    55,
+    "5. Documents annexés",
+    livraison.documents_annexes || ""
+  );
 
-  box(35, 290, 130, 55, "7. Nombre de colis", livraison.nombre_colis || "");
-  box(165, 290, 120, 55, "8. Mode d'emballage", livraison.emballage || "");
-  box(285, 290, 270, 55, "9. Nature de la marchandise", livraison.marchandises || "");
-
-  box(35, 345, 130, 55, "10. Poids brut", livraison.poids_brut || "");
-  box(165, 345, 120, 55, "11. Volume", livraison.volume || "");
   box(
     285,
-    345,
+    310,
+    270,
+    55,
+    "6. Marques et numéros",
+    String(livraison.id).slice(0, 8)
+  );
+
+  box(
+    35,
+    365,
+    130,
+    55,
+    "7. Nombre de colis",
+    livraison.nombre_colis != null
+      ? String(livraison.nombre_colis)
+      : ""
+  );
+
+  box(
+    165,
+    365,
+    120,
+    55,
+    "8. Mode d'emballage",
+    livraison.emballage || ""
+  );
+
+  box(
+    285,
+    365,
+    270,
+    55,
+    "9. Nature de la marchandise",
+    livraison.marchandises || ""
+  );
+
+  box(
+    35,
+    420,
+    130,
+    55,
+    "10. Poids brut",
+    livraison.poids_brut != null
+      ? String(livraison.poids_brut)
+      : ""
+  );
+
+  box(
+    165,
+    420,
+    120,
+    55,
+    "11. Volume",
+    livraison.volume != null
+      ? String(livraison.volume)
+      : ""
+  );
+
+  box(
+    285,
+    420,
     270,
     55,
     "12. Instructions de l'expéditeur",
-    livraison.instructions_cmr || "Vérifier le chargement avant départ."
+    livraison.instructions_cmr || ""
   );
 
   box(
     35,
-    400,
+    475,
     250,
     65,
     "16. Transporteur",
-    `${companyParams?.nom || "Transport SaaS"}\nChauffeur : ${chauffeur?.nom || "Non affecté"}\nCamion : ${camion?.immatriculation || "Non affecté"}`
+    `${companyParams?.nom || "TransportERP"}\nChauffeur : ${
+      chauffeur?.nom || "Non affecté"
+    }\nCamion : ${
+      camion?.immatriculation || "Non affecté"
+    }`
   );
 
   box(
     285,
-    400,
+    475,
     270,
     65,
     "18. Réserves et observations du transporteur",
-    livraison.reserves || "Aucune réserve déclarée"
+    livraison.reserves || ""
   );
 
-  box(35, 465, 250, 55, "19. Conventions particulières", "Selon conditions convenues entre les parties.");
-  box(285, 465, 270, 55, "21. Établi à / Date", `${livraison.adresse_depart || ""}\n${new Date().toLocaleDateString("fr-FR")}`);
-
-  doc.rect(35, 540, 170, 95).stroke();
-  doc.fontSize(8).text("22. Signature et cachet de l'expéditeur", 40, 548);
-  doc.fontSize(11).text(livraison.client || "", 45, 590);
-
-  doc.rect(210, 540, 170, 95).stroke();
-  doc.fontSize(8).text("23. Signature et cachet du transporteur", 215, 548);
-  doc.fontSize(11).text(livraison.signature_chauffeur || chauffeur?.nom || "", 220, 590);
-
-  doc.rect(385, 540, 170, 95).stroke();
-  doc.fontSize(8).text("24. Signature et cachet du destinataire", 390, 548);
-  doc.fontSize(11).text(livraison.signature_destinataire || "", 395, 590);
-
-  doc.fontSize(7).text(
-    companyParams?.mentions_legales || "Document CMR généré automatiquement par Transport SaaS. Document à vérifier et compléter selon les exigences réglementaires applicables.",
+  box(
     35,
-    660,
-    { align: "center", width: 520 }
+    540,
+    250,
+    55,
+    "19. Conventions particulières",
+    conventionsParticulieres
   );
+
+  box(
+    285,
+    540,
+    270,
+    55,
+    "21. Établi à / Date",
+    `${expediteurAdresse || livraison.adresse_depart || ""}\n${new Date().toLocaleDateString(
+      "fr-FR"
+    )}`
+  );
+
+  doc
+    .rect(35, 615, 170, 85)
+    .stroke();
+
+  doc
+    .fontSize(8)
+    .text(
+      "22. Signature et cachet de l'expéditeur",
+      40,
+      623
+    );
+
+  doc
+    .fontSize(11)
+    .text(
+      expediteurNom,
+      45,
+      665
+    );
+
+  doc
+    .rect(210, 615, 170, 85)
+    .stroke();
+
+  doc
+    .fontSize(8)
+    .text(
+      "23. Signature et cachet du transporteur",
+      215,
+      623
+    );
+
+  
+    if (
+  livraison.signature_chauffeur &&
+  livraison.signature_chauffeur.startsWith("data:image/")
+) {
+  const signatureBuffer = Buffer.from(
+    livraison.signature_chauffeur.split(",")[1],
+    "base64"
+  );
+
+  doc.image(signatureBuffer, 220, 650, {
+    fit: [150, 40],
+    align: "center",
+    valign: "center",
+  });
+} else {
+  doc
+    .fontSize(11)
+    .text(
+      livraison.signature_chauffeur ||
+        chauffeur?.nom ||
+        "",
+      220,
+      665
+    );
+}
+
+  doc
+    .rect(385, 615, 170, 85)
+    .stroke();
+
+  doc
+    .fontSize(8)
+    .text(
+      "24. Signature et cachet du destinataire",
+      390,
+      623
+    );
+
+ if (
+  livraison.signature_destinataire &&
+  livraison.signature_destinataire.startsWith("data:image/")
+) {
+  const signatureBuffer = Buffer.from(
+    livraison.signature_destinataire.split(",")[1],
+    "base64"
+  );
+
+  doc.image(signatureBuffer, 395, 650, {
+    fit: [150, 40],
+    align: "center",
+    valign: "center",
+  });
+} else {
+  doc
+    .fontSize(11)
+    .text(
+      livraison.signature_destinataire || "",
+      395,
+      665
+    );
+}
+
+  doc
+    .fontSize(7)
+    .text(
+      companyParams?.mentions_legales ||
+        "Document CMR généré automatiquement par TransportERP. Document à vérifier et compléter selon les exigences réglementaires applicables.",
+      35,
+      720,
+      {
+        align: "center",
+        width: 520,
+      }
+    );
 
   doc.end();
 
   const pdfBuffer = await pdfBufferPromise;
 
-  return new Response(new Uint8Array(pdfBuffer), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="cmr-${String(livraison.id).slice(0, 8)}.pdf"`,
-    },
-  });
+  return new Response(
+    new Uint8Array(pdfBuffer),
+    {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="cmr-${String(
+          livraison.id
+        ).slice(0, 8)}.pdf"`,
+      },
+    }
+  );
 }
