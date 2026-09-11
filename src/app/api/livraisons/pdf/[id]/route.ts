@@ -18,11 +18,7 @@ export async function GET(
   if (error || !livraison) {
     return new Response("Livraison introuvable", { status: 404 });
   }
-  console.log("SIGNATURES PDF :", {
-  signature_chauffeur: livraison.signature_chauffeur,
-  signature_destinataire: livraison.signature_destinataire,
-  date_signature: livraison.date_signature,
-});
+
   const { data: chauffeur } = await supabase
   .from("Chauffeurs")
   .select("nom")
