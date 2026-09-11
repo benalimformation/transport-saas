@@ -84,7 +84,7 @@ const [prixTTC, setPrixTTC] = useState(0);
       .order("nom", { ascending: true });
 
     const { data: chauffeursData } = await supabase
-      .from("chauffeurs")
+.from("Chauffeurs")
       .select("id, nom")
       .eq("entreprise_id", idEntreprise)
       .order("nom", { ascending: true });
