@@ -122,14 +122,42 @@ doc.text(`Camion : ${camion?.immatriculation || "Non affecté"}`, 50, 412);
   doc.fontSize(12).text("Signature chauffeur :", 50, 530);
 doc.rect(50, 555, 200, 70).stroke();
 
-if (livraison.signature_chauffeur) {
+if (
+  livraison.signature_chauffeur &&
+  livraison.signature_chauffeur.startsWith("data:image/")
+) {
+  const signatureBuffer = Buffer.from(
+    livraison.signature_chauffeur.split(",")[1],
+    "base64"
+  );
+
+  doc.image(signatureBuffer, 60, 565, {
+    fit: [180, 50],
+    align: "center",
+    valign: "center",
+  });
+} else if (livraison.signature_chauffeur) {
   doc.fontSize(14).text(livraison.signature_chauffeur, 70, 585);
 }
 
 doc.fontSize(12).text("Signature destinataire :", 300, 530);
 doc.rect(300, 555, 200, 70).stroke();
 
-if (livraison.signature_destinataire) {
+if (
+  livraison.signature_destinataire &&
+  livraison.signature_destinataire.startsWith("data:image/")
+) {
+  const signatureBuffer = Buffer.from(
+    livraison.signature_destinataire.split(",")[1],
+    "base64"
+  );
+
+  doc.image(signatureBuffer, 310, 565, {
+    fit: [180, 50],
+    align: "center",
+    valign: "center",
+  });
+} else if (livraison.signature_destinataire) {
   doc.fontSize(14).text(livraison.signature_destinataire, 320, 585);
 }
 
