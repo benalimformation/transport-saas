@@ -148,6 +148,7 @@ setPrixTTC(data.prix_ttc || 0);
 
     const { error } = await supabase.from("livraisons").insert([
       {
+        devis_id: devisId || null,
         client_id: clientId || null,
         client: clientSelectionne?.nom || "",
         adresse_depart: adresseDepart,
