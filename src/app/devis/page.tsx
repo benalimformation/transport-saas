@@ -9,6 +9,7 @@ type Devis = {
   id: string;
   numero_devis: string | null;
   client: string;
+  client_id: string | null;
   depart: string;
   arrivee: string;
   poids: number | null;
@@ -20,6 +21,19 @@ type Devis = {
   prix_ttc: number | null;
   statut: string | null;
   entreprise_id: string | null;
+  nature_marchandise: string | null;
+  nombre_colis: number | null;
+  volume_m3: number | null;
+  expediteur_nom: string | null;
+  expediteur_adresse: string | null;
+  destinataire_nom: string | null;
+  destinataire_adresse: string | null;
+  date_chargement: string | null;
+  heure_chargement: string | null;
+  date_dechargement: string | null;
+  heure_dechargement: string | null;
+  prestations_annexes: string | null;
+  conditions_particulieres: string | null;
 };
 
 export default function DevisPage() {
@@ -199,19 +213,25 @@ const refuses = data?.filter((d: Devis) => d.statut === "Refusé").length || 0;
     const { data, error } = await supabase
       .from("livraisons")
       .insert([
-        {
-          devis_id: item.id,
-          client: item.client,
-          adresse_depart: item.depart,
-          adresse_arrivee: item.arrivee,
-          date_livraison: item.date_transport,
-          statut: "Prévue",
-          entreprise_id: item.entreprise_id || entrepriseId,
-          prix_ht: item.prix_ht || 0,
-          tva: item.tva || 0,
-          prix_ttc: item.prix_ttc || item.prix || 0,
-        },
-      ])
+  {
+    devis_id: item.id,
+    client: item.client,
+    client_id: item.client_id,
+    adresse_depart: item.expediteur_adresse || item.depart,
+    adresse_arrivee: item.destinataire_adresse || item.arrivee,
+    destinataire: item.destinataire_nom || null,
+    marchandises: item.nature_marchandise || null,
+    nombre_colis: item.nombre_colis,
+    volume: item.volume_m3,
+    date_livraison: item.date_dechargement || item.date_transport,
+    heure_limite: item.heure_dechargement || null,
+    statut: "Prévue",
+    entreprise_id: item.entreprise_id || entrepriseId,
+    prix_ht: item.prix_ht || 0,
+    tva: item.tva || 0,
+    prix_ttc: item.prix_ttc || item.prix || 0,
+  },
+])
       .select()
       .single();
 
