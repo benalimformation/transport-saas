@@ -24,6 +24,8 @@ export default function ModifierLivraisonPage() {
   const [client, setClient] = useState("");
   const [adresseDepart, setAdresseDepart] = useState("");
   const [adresseArrivee, setAdresseArrivee] = useState("");
+const [paysDepart, setPaysDepart] = useState("France");
+const [paysArrivee, setPaysArrivee] = useState("France");
 
   const [destinataire, setDestinataire] = useState("");
   const [marchandises, setMarchandises] = useState("");
@@ -136,6 +138,8 @@ const dessinDestinataireActif = useRef(false);
       setClient(livraisonData.client || "");
       setAdresseDepart(livraisonData.adresse_depart || "");
       setAdresseArrivee(livraisonData.adresse_arrivee || "");
+      setPaysDepart(livraisonData.pays_depart || "France");
+      setPaysArrivee(livraisonData.pays_arrivee || "France");
 
       setDestinataire(livraisonData.destinataire || "");
       setMarchandises(livraisonData.marchandises || "");
@@ -304,6 +308,8 @@ function effacerSignature(
         client,
         adresse_depart: adresseDepart,
         adresse_arrivee: adresseArrivee,
+        pays_depart: paysDepart,
+        pays_arrivee: paysArrivee,
 
         destinataire: destinataire || null,
         marchandises: marchandises || null,
@@ -410,6 +416,35 @@ function effacerSignature(
             required
           />
         </div>
+        <div className="grid grid-cols-2 gap-4">
+  <div>
+    <label className="mb-2 block text-sm text-gray-300">
+      Pays de départ
+    </label>
+
+    <input
+      type="text"
+      value={paysDepart}
+      onChange={(e) => setPaysDepart(e.target.value)}
+      className="w-full rounded bg-gray-800 p-3"
+      required
+    />
+  </div>
+
+  <div>
+    <label className="mb-2 block text-sm text-gray-300">
+      Pays d&apos;arrivée
+    </label>
+
+    <input
+      type="text"
+      value={paysArrivee}
+      onChange={(e) => setPaysArrivee(e.target.value)}
+      className="w-full rounded bg-gray-800 p-3"
+      required
+    />
+  </div>
+</div>
 
         <div className="rounded border border-gray-800 bg-gray-950 p-4">
           <h2 className="mb-4 text-xl font-bold">
