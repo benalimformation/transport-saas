@@ -10,6 +10,8 @@ type Livraison = {
   client: string;
   adresse_depart: string;
   adresse_arrivee: string;
+  pays_depart: string | null;
+  pays_arrivee: string | null;
   chauffeur_id: string | null;
   camion_id: string | null;
   date_livraison: string | null;
