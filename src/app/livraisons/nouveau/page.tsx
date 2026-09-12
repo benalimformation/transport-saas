@@ -24,6 +24,8 @@ function NouvelleLivraisonForm() {
 
   const [clientId, setClientId] = useState("");
   const [adresseDepart, setAdresseDepart] = useState("");
+  const [paysDepart, setPaysDepart] = useState("France");
+  const [paysArrivee, setPaysArrivee] = useState("France");
   const [adresseArrivee, setAdresseArrivee] = useState("");
   const [chauffeurId, setChauffeurId] = useState("");
   const [camionId, setCamionId] = useState("");
@@ -153,6 +155,8 @@ setPrixTTC(data.prix_ttc || 0);
         client: clientSelectionne?.nom || "",
         adresse_depart: adresseDepart,
         adresse_arrivee: adresseArrivee,
+        pays_depart: paysDepart,
+        pays_arrivee: paysArrivee,
         chauffeur_id: chauffeurId || null,
         camion_id: camionId || null,
         date_livraison: dateLivraison || null,
@@ -221,6 +225,25 @@ setPrixTTC(data.prix_ttc || 0);
           required
         />
 
+<div className="grid grid-cols-2 gap-4">
+  <input
+    type="text"
+    placeholder="Pays de départ"
+    value={paysDepart}
+    onChange={(e) => setPaysDepart(e.target.value)}
+    className="w-full rounded bg-gray-800 p-3"
+    required
+  />
+
+  <input
+    type="text"
+    placeholder="Pays d'arrivée"
+    value={paysArrivee}
+    onChange={(e) => setPaysArrivee(e.target.value)}
+    className="w-full rounded bg-gray-800 p-3"
+    required
+  />
+</div>
         <select
           value={chauffeurId}
           onChange={(e) => setChauffeurId(e.target.value)}
