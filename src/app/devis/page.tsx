@@ -217,6 +217,8 @@ const refuses = data?.filter((d: Devis) => d.statut === "Refusé").length || 0;
     devis_id: item.id,
     client: item.client,
     client_id: item.client_id,
+    expediteur: item.expediteur_nom || null,
+    date_prise_en_charge: item.date_chargement || item.date_transport || null,
     adresse_depart: item.expediteur_adresse || item.depart,
     adresse_arrivee: item.destinataire_adresse || item.arrivee,
     destinataire: item.destinataire_nom || null,

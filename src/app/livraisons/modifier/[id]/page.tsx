@@ -22,6 +22,8 @@ export default function ModifierLivraisonPage() {
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
 
   const [client, setClient] = useState("");
+  const [expediteur, setExpediteur] = useState("");
+const [datePriseEnCharge, setDatePriseEnCharge] = useState("");
   const [adresseDepart, setAdresseDepart] = useState("");
   const [adresseArrivee, setAdresseArrivee] = useState("");
 const [paysDepart, setPaysDepart] = useState("France");
@@ -47,6 +49,7 @@ const [paysArrivee, setPaysArrivee] = useState("France");
 
   const [signatureChauffeur, setSignatureChauffeur] = useState("");
   const [signatureDestinataire, setSignatureDestinataire] = useState("");
+  const [dateSignature, setDateSignature] = useState<string | null>(null); 
 
   const canvasChauffeurRef = useRef<HTMLCanvasElement | null>(null);
 const canvasDestinataireRef = useRef<HTMLCanvasElement | null>(null);
@@ -136,6 +139,8 @@ const dessinDestinataireActif = useRef(false);
       setCamions(camionsData || []);
 
       setClient(livraisonData.client || "");
+      setExpediteur(livraisonData.expediteur || "");
+      setDatePriseEnCharge(livraisonData.date_prise_en_charge || "");
       setAdresseDepart(livraisonData.adresse_depart || "");
       setAdresseArrivee(livraisonData.adresse_arrivee || "");
       setPaysDepart(livraisonData.pays_depart || "France");
@@ -163,6 +168,7 @@ const dessinDestinataireActif = useRef(false);
       setSignatureDestinataire(
         livraisonData.signature_destinataire || ""
       );
+      setDateSignature(livraisonData.date_signature || null);
     }
 
     if (id) {
@@ -287,6 +293,16 @@ function effacerSignature(
   async function modifierLivraison(e: React.FormEvent) {
     e.preventDefault();
 
+       if (
+      datePriseEnCharge &&
+      dateLivraison &&
+      dateLivraison < datePriseEnCharge
+    ) {
+      alert(
+        "La date de livraison ne peut pas être antérieure à la date de prise en charge."
+      );
+      return;
+    }
     if (!entrepriseId) {
       alert("Entreprise introuvable.");
       return;
@@ -302,61 +318,60 @@ function effacerSignature(
       return;
     }
 
-    const { error } = await supabase
-      .from("livraisons")
-      .update({
-        client,
-        adresse_depart: adresseDepart,
-        adresse_arrivee: adresseArrivee,
-        pays_depart: paysDepart,
-        pays_arrivee: paysArrivee,
+const { error } = await supabase
+  .from("livraisons")
+  .update({
+    client,
+    expediteur: expediteur || null,
+    date_prise_en_charge: datePriseEnCharge || null,
+    adresse_depart: adresseDepart,
+    adresse_arrivee: adresseArrivee,
+    pays_depart: paysDepart,
+    pays_arrivee: paysArrivee,
 
-        destinataire: destinataire || null,
-        marchandises: marchandises || null,
-        nombre_colis: nombreColis
-          ? parseInt(nombreColis, 10)
-          : null,
-        emballage: emballage || null,
-        poids_brut: poidsBrut
-          ? parseFloat(poidsBrut)
-          : null,
-        volume: volume
-          ? parseFloat(volume)
-          : null,
+    destinataire: destinataire || null,
+    marchandises: marchandises || null,
+    nombre_colis: nombreColis
+      ? parseInt(nombreColis, 10)
+      : null,
+    emballage: emballage || null,
+    poids_brut: poidsBrut
+      ? parseFloat(poidsBrut)
+      : null,
+    volume: volume
+      ? parseFloat(volume)
+      : null,
 
-        date_livraison: dateLivraison || null,
-        heure_limite: heureLimite || null,
+    date_livraison: dateLivraison || null,
+    heure_limite: heureLimite || null,
 
-        reserves: reserves || null,
-        documents_annexes: documentsAnnexes || null,
-        instructions_cmr: instructionsCmr || null,
+    reserves: reserves || null,
+    documents_annexes: documentsAnnexes || null,
+    instructions_cmr: instructionsCmr || null,
 
-        chauffeur_id: chauffeurId,
-        camion_id: camionId,
+    chauffeur_id: chauffeurId,
+    camion_id: camionId,
 
-        statut:
-          signatureChauffeur && signatureDestinataire
-            ? "Livrée"
-            : statut,
+    statut,
 
-        signature_chauffeur: signatureChauffeur,
-        signature_destinataire: signatureDestinataire,
+    signature_chauffeur: signatureChauffeur,
+    signature_destinataire: signatureDestinataire,
 
-        date_signature:
-          signatureChauffeur || signatureDestinataire
-            ? new Date().toISOString()
-            : null,
-      })
-      .eq("id", id)
-      .eq("entreprise_id", entrepriseId);
+    date_signature:
+      dateSignature ||
+      (signatureChauffeur || signatureDestinataire
+        ? new Date().toISOString()
+        : null),
+  })
+  .eq("id", id)
+  .eq("entreprise_id", entrepriseId);
+  if (error) {
+  alert(error.message);
+  return;
+}
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    window.location.href = "/livraisons";
-  }
+window.location.href = "/livraisons";
+}
 
   return (
     <main className="min-h-screen bg-gray-950 p-10 text-white">
@@ -387,6 +402,31 @@ function effacerSignature(
             className="w-full rounded bg-gray-800 p-3"
             required
           />
+          <div>
+  <label className="mb-2 block text-sm text-gray-300">
+    Expéditeur
+  </label>
+
+  <input
+    type="text"
+    value={expediteur}
+    onChange={(e) => setExpediteur(e.target.value)}
+    className="w-full rounded bg-gray-800 p-3"
+  />
+</div>
+
+<div>
+  <label className="mb-2 block text-sm text-gray-300">
+    Date de prise en charge
+  </label>
+
+  <input
+    type="date"
+    value={datePriseEnCharge}
+    onChange={(e) => setDatePriseEnCharge(e.target.value)}
+    className="w-full rounded bg-gray-800 p-3"
+  />
+</div>
         </div>
 
         <div>
@@ -551,6 +591,7 @@ function effacerSignature(
               <input
                 type="date"
                 value={dateLivraison}
+                min={datePriseEnCharge || undefined}
                 onChange={(e) => setDateLivraison(e.target.value)}
                 className="w-full rounded bg-gray-800 p-3"
               />
