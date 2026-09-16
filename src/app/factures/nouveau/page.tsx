@@ -96,14 +96,12 @@ export default function NouvelleFacturePage() {
     }
 
     setLoading(true);
-console.log("Livraison sélectionnée :", livraison);
-    const numero = `FAC-${Date.now()}`;
+
 
     const { error } = await supabase
       .from("factures")
       .insert([
  {
-  numero,
   entreprise_id: livraison.entreprise_id,
   livraison_id: livraison.id,
   client: livraison.client,

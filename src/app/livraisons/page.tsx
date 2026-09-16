@@ -235,12 +235,10 @@ export default function LivraisonsPage() {
       }
 
       // Créer la facture avec les données de la livraison
-      const numero = `FAC-${Date.now()}`;
       const { error: factureError } = await supabase
         .from("factures")
         .insert([
           {
-            numero,
             entreprise_id: livraison.entreprise_id,
             livraison_id: livraison.id,
             client: livraison.client,
@@ -284,7 +282,7 @@ export default function LivraisonsPage() {
       return {
         exists: true,
         factureId: data.id,
-        numero: data.numero || `FAC-${data.id.slice(0, 8).toUpperCase()}`
+        numero: data.numero || "Sans numéro"
       };
     } catch (err) {
       console.error("Erreur vérification facture:", err);

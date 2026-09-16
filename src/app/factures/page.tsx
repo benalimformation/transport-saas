@@ -398,7 +398,14 @@ export default function FacturesPage() {
                     Marquer payée
                   </button>
                 )}
-
+<button
+  onClick={() =>
+    window.open(`/api/factures/pdf/${facture.id}?t=${Date.now()}`, "_blank")
+  }
+  className="rounded bg-blue-600 px-4 py-2"
+>
+  PDF
+</button>
                 <button
                   onClick={() => supprimerFacture(facture.id)}
                   className="rounded bg-red-600 px-4 py-2"

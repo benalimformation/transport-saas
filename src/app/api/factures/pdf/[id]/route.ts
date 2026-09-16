@@ -1,14 +1,29 @@
-import { supabase } from "../../../../../lib/supabase";
+import { createServerClient } from "@supabase/ssr";
+import { NextRequest } from "next/server";
 import { getCompanyParams, getLogoBuffer } from "../../../../../lib/getCompanyParams";
 
 export const runtime = "nodejs";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
   const { default: PDFDocument } = await import("pdfkit");
+  const supabase = createServerClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll() {
+        // Lecture seule : aucune écriture de cookie nécessaire.
+      },
+    },
+  }
+);
 
   // Get the facture data
   const { data: facture, error: factureError } = await supabase
@@ -18,7 +33,7 @@ export async function GET(
     .single();
 
   if (factureError || !facture) {
-    return new Response("Facture introuvable", { status: 404 });
+  return new Response("Facture introuvable", { status: 404 });
   }
 
   // Get the associated livraison data
@@ -84,10 +99,7 @@ export async function GET(
   });
 
   // Facture number and date
-  const factureNumber = companyParams?.prefixe_factures
-    ? `${companyParams.prefixe_factures}${new Date().getFullYear()}-${String(facture.id).slice(0, 8).toUpperCase()}`
-    : `FACT-${new Date().getFullYear()}-${String(facture.id).slice(0, 8).toUpperCase()}`;
-
+  const factureNumber = facture.numero || "Non attribué";
   doc.fontSize(10).text(`Facture n° : ${factureNumber}`, 50, 200);
   doc.text(`Date d'émission : ${new Date(facture.date_facture || new Date()).toLocaleDateString("fr-FR")}`, 50, 215);
   doc.text(`Date d'échéance : ${new Date(facture.date_echeance || new Date()).toLocaleDateString("fr-FR")}`, 50, 230);
@@ -138,7 +150,7 @@ export async function GET(
 
   // Legal mentions
   doc.fontSize(10).text("Mentions légales:", 50, 570);
-  doc.text(companyParams?.mentions_legales || "Document généré automatiquement par Transport SaaS.", 50, 590, {
+  doc.text(companyParams?.mentions_legales || "Document généré électroniquement.", 50, 590, {
     width: 495,
     align: "justify"
   });
@@ -162,11 +174,7 @@ export async function GET(
     doc.text(bankInfo, 50, 710);
   }
 
-  doc.fontSize(9).text(companyParams?.mentions_legales || "Document généré automatiquement par Transport SaaS.", 50, 750, {
-    align: "center",
-  });
-
-  doc.end();
+    doc.end();
 
   const pdfBuffer = await pdfBufferPromise;
 
