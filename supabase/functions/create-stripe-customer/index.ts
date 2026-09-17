@@ -89,10 +89,22 @@ serve(async (req) => {
       });
     }
 
-    // Initialize Supabase client
+     // Initialize Supabase client with the new secret API key system
+    const secretKeys = JSON.parse(
+      Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}"
+    );
+
+    const supabaseSecretKey = secretKeys["transport_saas_server_2026"];
+
+    if (!supabaseSecretKey) {
+      throw new Error(
+        "Supabase secret key 'transport_saas_server_2026' is unavailable"
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      supabaseSecretKey,
       {
         auth: {
           autoRefreshToken: false,
