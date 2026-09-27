@@ -166,6 +166,7 @@ const getWeatherIcon = (weatherCode: number, isDay: boolean) => {
 export default function DashboardHeader() {
   const [todayDate, setTodayDate] = useState('');
   const [userCity, setUserCity] = useState<string | null>(null);
+  const [userCountryCode, setUserCountryCode] = useState<string | null>(null);
   const [cityLoading, setCityLoading] = useState(true);
   const [cityError, setCityError] = useState(false);
   const [weatherData, setWeatherData] = useState<{
@@ -177,7 +178,6 @@ export default function DashboardHeader() {
   } | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [weatherError, setWeatherError] = useState(false);
-
   const [userProfile, setUserProfile] = useState<{
     nom: string | null;
     role: string | null;
@@ -198,24 +198,25 @@ export default function DashboardHeader() {
   }, []);
 
   // Effet pour charger le profil utilisateur
-  useEffect(() => {
+      useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         setProfileLoading(true);
-        
+
         const { data: { user }, error: authError } = await supabase.auth.getUser();
+
         if (authError || !user) {
           console.error('Utilisateur non connecté:', authError);
           setUserProfile(null);
           return;
         }
-        
+
         const { data: profil, error: profilError } = await supabase
           .from('profils')
           .select('nom, role, entreprise_id')
           .eq('id', user.id)
           .single();
-        
+
         if (profilError) {
           console.error('Erreur lors de la récupération du profil:', profilError);
           setUserProfile(null);
@@ -233,56 +234,68 @@ export default function DashboardHeader() {
         setProfileLoading(false);
       }
     };
-    
+
     fetchUserProfile();
   }, []);
 
+  // Effet pour compter les véhicules de l'entreprise
   useEffect(() => {
-  const fetchVehicleCount = async () => {
-    if (!userProfile?.entreprise_id) return;
+    const fetchVehicleCount = async () => {
+      if (!userProfile?.entreprise_id) return;
 
-    const { count, error } = await supabase
-      .from('camions')
-      .select('*', { count: 'exact', head: true })
-      .eq('entreprise_id', userProfile.entreprise_id);
+      const { count, error } = await supabase
+        .from('camions')
+        .select('*', { count: 'exact', head: true })
+        .eq('entreprise_id', userProfile.entreprise_id);
 
-    if (!error) {
-      setVehicleCount(count || 0);
-    }
-  };
+      if (!error) {
+        setVehicleCount(count || 0);
+      }
+    };
 
-  fetchVehicleCount();
-}, [userProfile]);
-  // Effet pour récupérer la ville de l'entreprise depuis Supabase
-  useEffect(() => {
+    fetchVehicleCount();
+  }, [userProfile]);
+
+     useEffect(() => {
+    if (profileLoading) return;
+
     const fetchCompanyCity = async () => {
       try {
         setCityLoading(true);
         setCityError(false);
-        
-        // Attendre que le profil soit chargé
-        if (profileLoading || !userProfile?.entreprise_id) {
-          setCityError(true);
+
+        if (!userProfile?.entreprise_id) {
+          setUserCity(null);
+          setUserCountryCode(null);
           return;
         }
-        
-        // Récupérer l'adresse de l'entreprise depuis la table entreprises
+
         const { data: entreprise, error: entrepriseError } = await supabase
           .from('entreprises')
-          .select('adresse')
+          .select('adresse, code_postal, ville, pays')
           .eq('id', userProfile.entreprise_id)
           .single();
-        
+
         let city: string | null = null;
-        
-        if (!entrepriseError && entreprise?.adresse) {
-          const extractedCity = extractCityFromAddress(entreprise.adresse);
-          if (extractedCity) {
-            city = extractedCity;
+        let countryCode: string | null = null;
+
+        if (!entrepriseError && entreprise) {
+          city = entreprise.ville?.trim() || null;
+        countryCode = entreprise.pays?.trim().toUpperCase() || null;
+
+          // Fallback temporaire pour les anciennes entreprises
+          // qui n'ont pas encore de ville structurée.
+          if (!city && entreprise.adresse) {
+            city = extractCityFromAddress(entreprise.adresse);
+
+            if (city && !countryCode) {
+              countryCode = 'FR';
+            }
           }
         }
-        
+
         setUserCity(city);
+        setUserCountryCode(countryCode);
       } catch (error) {
         console.error('Erreur lors de la récupération de la ville:', error);
         setCityError(true);
@@ -290,10 +303,9 @@ export default function DashboardHeader() {
         setCityLoading(false);
       }
     };
-    
+
     fetchCompanyCity();
   }, [userProfile, profileLoading]);
-
   // Effet pour récupérer la météo basée sur la ville de l'entreprise
   useEffect(() => {
     const fetchWeather = async () => {
@@ -309,23 +321,28 @@ export default function DashboardHeader() {
         let name = '';
         let country = '';
         
-        // Géocoder la ville de l'entreprise (userCity est garanti non-null ici)
-        const cityForGeocode = userCity!;
-        const encodedCity = encodeURIComponent(cityForGeocode);
+        // Géocoder la ville structurée de l'entreprise.
+        const encodedCity = encodeURIComponent(userCity);
+        const countryFilter = userCountryCode
+          ? `&countryCode=${encodeURIComponent(userCountryCode)}`
+          : '';
+
         const geocodeResponse = await fetch(
-          `https://geocoding-api.open-meteo.com/v1/search?name=${encodedCity}&count=1&language=fr&format=json&countryCode=FR`
+          `https://geocoding-api.open-meteo.com/v1/search?name=${encodedCity}&count=1&language=fr&format=json${countryFilter}`
         );
-        
         if (geocodeResponse.ok) {
           const geocodeData = await geocodeResponse.json();
+
           if (geocodeData.results && geocodeData.results.length > 0) {
             ({ latitude, longitude, name, country } = geocodeData.results[0]);
             geocodeSuccess = true;
           }
         }
-        
+
         if (!geocodeSuccess) {
-          throw new Error('Géocodage échoué');
+          setWeatherData(null);
+          setWeatherError(true);
+          return;
         }
         
         // Récupération des données météo avec is_day
@@ -354,7 +371,7 @@ export default function DashboardHeader() {
     };
     
     fetchWeather();
-  }, [userCity, cityLoading]); // Dépend de userCity et cityLoading
+    }, [userCity, userCountryCode, cityLoading]);
   return (
     <header className="sticky top-0 z-10 bg-gray-950/95 backdrop-blur-sm border-b border-gray-800">
       <div className="flex items-center justify-between h-16 px-6">
@@ -404,7 +421,7 @@ export default function DashboardHeader() {
               ) : userCity === null ? (
                 <>
                   <p className="text-sm text-white">Ville non configurée</p>
-                  <p className="text-xs text-gray-400">Complétez l'adresse de votre entreprise</p>
+                  <p className="text-xs text-gray-400">Complétez la ville dans les paramètres</p>
                 </>
               ) : weatherLoading ? (
                 <>
@@ -413,7 +430,8 @@ export default function DashboardHeader() {
                 </>
               ) : weatherError ? (
                 <>
-                  <p className="text-sm text-white">{userCity}, France</p>
+                  <p className="text-sm text-white">
+                  {userCity}{userCountryCode ? `, ${userCountryCode}` : ''}</p>
                   <p className="text-xs text-gray-400">Météo indisponible</p>
                 </>
               ) : weatherData ? (
@@ -423,7 +441,8 @@ export default function DashboardHeader() {
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-white">{userCity}, France</p>
+                  <p className="text-sm text-white">
+                {userCity}{userCountryCode ? `, ${userCountryCode}` : ''}</p>
                   <p className="text-xs text-gray-400">Données temporairement indisponibles</p>
                 </>
               )}

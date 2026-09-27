@@ -10,6 +10,9 @@ interface Entreprise {
   id?: string;
   nom: string;
   adresse: string;
+  code_postal: string;
+  ville: string;
+  pays: string;
   telephone: string;
   email: string;
 }
@@ -52,6 +55,9 @@ function ParametresPageContent() {
   const [settings, setSettings] = useState<Entreprise>({
     nom: "",
     adresse: "",
+    code_postal: "",
+    ville: "",
+    pays: "FR",
     telephone: "",
     email: "",
   });
@@ -60,6 +66,8 @@ function ParametresPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [communes, setCommunes] = useState<string[]>([]);
+  const [cityLookupLoading, setCityLookupLoading] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -103,7 +111,7 @@ function ParametresPageContent() {
       // Récupérer les données de l'entreprise depuis la table entreprises
       const { data: entreprise, error: entrepriseError } = await supabase
         .from("entreprises")
-        .select("id, nom, adresse, telephone, email")
+        .select("id, nom, adresse, code_postal, ville, pays, telephone, email")
         .eq("id", profil.entreprise_id)
         .single();
 
@@ -119,6 +127,9 @@ function ParametresPageContent() {
         id: entreprise?.id,
         nom: entreprise?.nom || "",
         adresse: entreprise?.adresse || "",
+        code_postal: entreprise?.code_postal || "",
+        ville: entreprise?.ville || "",
+        pays: entreprise?.pays || "FR",
         telephone: entreprise?.telephone || "",
         email: entreprise?.email || "",
       });
@@ -136,10 +147,13 @@ function ParametresPageContent() {
 
     // Validation obligatoire avant setLoading
     const adresseNettoyee = settings.adresse.trim();
+    const codePostalNettoye = settings.code_postal.trim();
+    const villeNettoyee = settings.ville.trim();
+    const paysNettoye = settings.pays.trim().toUpperCase();
     const telephoneNettoye = settings.telephone.trim();
 
-    if (!adresseNettoyee || !telephoneNettoye) {
-      setError("L'adresse et le téléphone sont obligatoires.");
+    if (!adresseNettoyee || !codePostalNettoye || !villeNettoyee || !paysNettoye || !telephoneNettoye) {
+      setError("L'adresse, le code postal, la ville, le pays et le téléphone sont obligatoires.");
       return;
     }
 
@@ -154,6 +168,9 @@ function ParametresPageContent() {
         .update({
           nom: settings.nom.trim(),
           adresse: adresseNettoyee,
+          code_postal: codePostalNettoye,
+          ville: villeNettoyee,
+          pays: paysNettoye,
           telephone: telephoneNettoye,
           email: settings.email.trim() || null
         })
@@ -188,6 +205,62 @@ router.replace(isOnboarding ? "/camions/nouveau?onboarding=1" : "/dashboard");
   function handleChange(field: string, value: string | number) {
     setSettings(prev => ({ ...prev, [field]: value }));
   }
+
+  useEffect(() => {
+    const codePostal = settings.code_postal.trim();
+
+    if (settings.pays !== "FR" || !/^\d{5}$/.test(codePostal)) {
+      setCommunes([]);
+      setCityLookupLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function fetchCommunes() {
+      setCityLookupLoading(true);
+
+      try {
+        const response = await fetch(
+          `https://geo.api.gouv.fr/communes?codePostal=${encodeURIComponent(codePostal)}&fields=nom&format=json`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data: Array<{ nom?: string }> = await response.json();
+        const noms = Array.from(
+          new Set(
+            data
+              .map((commune) => commune.nom?.trim())
+              .filter((nom): nom is string => Boolean(nom))
+          )
+        );
+
+        if (controller.signal.aborted) return;
+
+        setCommunes(noms);
+
+        if (noms.length === 1) {
+          setSettings(prev => ({ ...prev, ville: noms[0] }));
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.warn("Recherche de commune indisponible:", err);
+        setCommunes([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setCityLookupLoading(false);
+        }
+      }
+    }
+
+    fetchCommunes();
+
+    return () => controller.abort();
+  }, [settings.code_postal, settings.pays]);
 
   if (loading) {
     return <ParametresPageLoading />;
@@ -233,7 +306,7 @@ router.replace(isOnboarding ? "/camions/nouveau?onboarding=1" : "/dashboard");
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Adresse complète</label>
+                <label className="block text-sm font-medium mb-2">Adresse</label>
                 <input
                   type="text"
                   value={settings.adresse}
@@ -241,8 +314,80 @@ router.replace(isOnboarding ? "/camions/nouveau?onboarding=1" : "/dashboard");
                   className="w-full rounded bg-gray-800 p-3 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
                   required
                   disabled={isReadOnly}
-                  placeholder="Adresse de votre entreprise"
+                  placeholder="Numéro et nom de voie"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Code postal</label>
+                <input
+                  type="text"
+                  value={settings.code_postal}
+                  onChange={(e) => handleChange('code_postal', e.target.value)}
+                  className="w-full rounded bg-gray-800 p-3 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
+                  required
+                  disabled={isReadOnly}
+                  autoComplete="postal-code"
+                  placeholder="Code postal"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Ville</label>
+
+                {settings.pays === "FR" && communes.length > 1 ? (
+                  <select
+                    value={communes.includes(settings.ville) ? settings.ville : ""}
+                    onChange={(e) => handleChange('ville', e.target.value)}
+                    className="w-full rounded bg-gray-800 p-3 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
+                    required
+                    disabled={isReadOnly}
+                  >
+                    <option value="">Sélectionner une commune</option>
+                    {communes.map((commune) => (
+                      <option key={commune} value={commune}>
+                        {commune}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={settings.ville}
+                    onChange={(e) => handleChange('ville', e.target.value)}
+                    className="w-full rounded bg-gray-800 p-3 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
+                    required
+                    disabled={isReadOnly}
+                    autoComplete="address-level2"
+                    placeholder="Ville"
+                  />
+                )}
+
+                {cityLookupLoading && (
+                  <p className="mt-2 text-xs text-gray-400">
+                    Recherche de la commune...
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Pays</label>
+                <select
+                  value={settings.pays}
+                  onChange={(e) => handleChange('pays', e.target.value)}
+                  className="w-full rounded bg-gray-800 p-3 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
+                  required
+                  disabled={isReadOnly}
+                >
+                  <option value="FR">France</option>
+                  <option value="BE">Belgique</option>
+                  <option value="LU">Luxembourg</option>
+                  <option value="DE">Allemagne</option>
+                  <option value="ES">Espagne</option>
+                  <option value="IT">Italie</option>
+                  <option value="NL">Pays-Bas</option>
+                  <option value="CH">Suisse</option>
+                </select>
               </div>
             </div>
           </div>
