@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Bell, Cloud, ChevronDown, User, LoaderCircle, CircleAlert, Sun, Moon, CloudSun, CloudMoon, CloudFog, CloudDrizzle, CloudRain, CloudSnow, CloudLightning } from 'lucide-react';
+import { Cloud, User, LoaderCircle, CircleAlert, Sun, Moon, CloudSun, CloudMoon, CloudFog, CloudDrizzle, CloudRain, CloudSnow, CloudLightning } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 const supabase = createClient();
@@ -388,7 +388,7 @@ export default function DashboardHeader() {
               )}
             </h1>
             <p className="text-sm text-gray-400">
-              {todayDate} • <span className="text-green-400">En ligne</span>
+              {todayDate}
             </p>
           </div>
           
@@ -450,33 +450,8 @@ export default function DashboardHeader() {
           </div>
         </div>
 
-        {/* Partie droite - Recherche et notifications */}
+        {/* Partie droite - Profil utilisateur */}
         <div className="flex items-center space-x-4">
-          {/* Champ de recherche */}
-          <div className="hidden lg:flex items-center bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 w-64">
-            <Search className="w-4 h-4 text-gray-500 mr-3" />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              className="bg-transparent border-none text-sm text-white placeholder-gray-500 focus:outline-none w-full"
-            />
-          </div>
-
-          {/* Bouton recherche mobile */}
-          <button className="lg:hidden p-2 bg-gray-900 rounded-lg border border-gray-800">
-            <Search className="w-5 h-5 text-gray-400" />
-          </button>
-
-          {/* Notifications */}
-          <button className="relative p-2 bg-gray-900 rounded-lg border border-gray-800 hover:bg-gray-800 transition-colors">
-            <Bell className="w-5 h-5 text-gray-400" />
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-              3
-            </span>
-          </button>
-
-          {/* Séparateur */}
-          <div className="h-6 w-px bg-gray-800"></div>
 
           {/* Profil utilisateur */}
           <div className="flex items-center space-x-3">
@@ -501,38 +476,24 @@ export default function DashboardHeader() {
                 )}
               </p>
             </div>
-            <ChevronDown className="w-4 h-4 text-gray-500" />
-          </div>
+
+            </div>
         </div>
       </div>
 
-      {/* Barre d'état générale - bandeau sous le header */}
+      {/* Barre d'état générale - données réelles uniquement */}
       <div className="bg-gradient-to-r from-gray-900 to-gray-950 border-t border-gray-800 px-6 py-2">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center  gap-8">
-            <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-              <span className="text-gray-300">Système opérationnel</span>
-            </div>
-              <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-            </div>
-            <div className="flex items-center">
-              <span className="text-gray-300">
-  {vehicleCount > 0
-    ? `${vehicleCount} véhicule${vehicleCount > 1 ? 's' : ''} enregistré${vehicleCount > 1 ? 's' : ''}`
-    : 'Aucun véhicule enregistré'}
-</span>
-</div>
-<div className="flex items-center">
-              <span className="text-gray-300">Aucune livraison aujourd'hui</span>
-            </div>
-          <div className="text-gray-400 text-xs">
-            Dernière mise à jour : 15:42
+        <div className="flex items-center text-sm">
+          <div className="flex items-center">
+            <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+            <span className="text-gray-300">
+              {vehicleCount > 0
+                ? `${vehicleCount} véhicule${vehicleCount > 1 ? 's' : ''} enregistré${vehicleCount > 1 ? 's' : ''}`
+                : 'Aucun véhicule enregistré'}
+            </span>
           </div>
         </div>
       </div>
-     </div>
     </header>
   );
 }
