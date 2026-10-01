@@ -1,4 +1,5 @@
-import { createSupabaseServiceClient } from "../../../../../lib/supabase/service";
+import { NextRequest } from "next/server";
+import { createSupabaseProxyClient } from "../../../../../lib/supabase/proxy";
 import {
   getCompanyParams,
   getLogoBuffer,
@@ -37,18 +38,43 @@ function formatTime(value?: string | null): string {
 }
 
 export async function GET(
-  _request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
 
-  const supabase = createSupabaseServiceClient();
+  const { supabase } = createSupabaseProxyClient(request);
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return new Response("Non autorisé", { status: 401 });
+  }
+
+  const { data: profil, error: profilError } = await supabase
+    .from("profils")
+    .select("entreprise_id")
+    .eq("id", user.id)
+    .single();
+
+  if (profilError || !profil?.entreprise_id) {
+    return new Response("Profil utilisateur introuvable", {
+      status: 401,
+    });
+  }
+
+  const entrepriseId = profil.entreprise_id;
+
   const { default: PDFDocument } = await import("pdfkit");
 
   const { data: devis, error } = await supabase
     .from("devis")
     .select("*")
     .eq("id", id)
+    .eq("entreprise_id", entrepriseId)
     .single();
 
   if (error || !devis) {
