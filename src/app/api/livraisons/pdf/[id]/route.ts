@@ -1,13 +1,28 @@
-import { supabase } from "../../../../../lib/supabase";
+import { createServerClient } from "@supabase/ssr";
+import { NextRequest } from "next/server";
 import { getCompanyParams, getLogoBuffer } from "../../../../../lib/getCompanyParams";
 export const runtime = "nodejs";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
   const { default: PDFDocument } = await import("pdfkit");
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll() {
+          // Lecture seule : aucune écriture de cookie nécessaire.
+        },
+      },
+    }
+  );
 
   const { data: livraison, error } = await supabase
     .from("livraisons")
