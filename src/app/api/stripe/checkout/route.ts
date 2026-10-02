@@ -167,6 +167,17 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
+    if (!siteUrl) {
+      return NextResponse.json(
+        {
+          error: 'Configuration serveur invalide',
+          message: 'NEXT_PUBLIC_SITE_URL non configurée',
+        },
+        { status: 500 }
+      );
+    }
 
     // 11. Créer la session Checkout
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -178,8 +189,8 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/abonnement?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/abonnement?checkout=cancel`,
+      success_url: `${siteUrl}/abonnement?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/abonnement?checkout=cancel`,
       metadata: {
         entreprise_id: entrepriseId,
         plan: plan,
