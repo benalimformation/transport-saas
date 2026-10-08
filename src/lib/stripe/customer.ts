@@ -96,7 +96,7 @@ export async function createStripeCustomerForEntreprise(
         ...metadata,
         ...params.metadata,
       },
-      description: `Client TransportERP: ${params.nom_entreprise}`,
+      description: `Client ROUTCH: ${params.nom_entreprise}`,
     });
 
     // 5. Update database with stripe_customer_id

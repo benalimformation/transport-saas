@@ -245,7 +245,7 @@ serve(async (req) => {
         created_by: "transport-erp-edge-function",
         created_at: new Date().toISOString(),
       },
-      description: `Client TransportERP: ${nomEntreprise}`,
+      description: `Client ROUTCH: ${nomEntreprise}`,
     }, {
       idempotencyKey: idempotencyKey,
     });

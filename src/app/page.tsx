@@ -41,8 +41,7 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
               <div className="flex-shrink-0">
-                <span className="text-xl font-bold text-gray-900">TRANSPORT</span>
-                <span className="text-xl font-bold text-green-600">ERP</span>
+                <span className="text-xl font-bold text-gray-900">ROUTCH</span>
               </div>
               <div className="hidden md:block">
                 <div className="ml-10 flex items-baseline space-x-6">
@@ -66,11 +65,11 @@ export default function Home() {
           <div className="max-w-4xl mx-auto">
             <div className="text-center">
               <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-                TRANSPORT SIMPLIFIÉ.<br />
+                ROUTCH SIMPLIFIÉ.<br />
                 GESTION MAÎTRISÉE.
               </h1>
               <p className="text-xl text-gray-600 mb-8">
-                ERP conçu spécialement pour les artisans, TPE et PME du transport routier.
+                ROUTCH conçu spécialement pour les artisans, TPE et PME du transport routier.
               </p>
               <p className="text-lg text-gray-500 mb-8 leading-relaxed">
                 Remplacez Excel, Word, WhatsApp et le papier<br />
@@ -329,14 +328,14 @@ export default function Home() {
               Une offre simple, sans surprise
             </h2>
             <p className="text-gray-600">
-              Toutes les fonctionnalités de TransportERP dans une seule offre.
+              Toutes les fonctionnalités de ROUTCH dans une seule offre.
             </p>
           </div>
 
           <div className="max-w-xl mx-auto bg-white p-8 rounded-lg border-2 border-green-600 shadow-lg">
             <div className="text-center">
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                TRANSPORTERP
+                ROUTCH
               </h3>
 
               <div className="mb-2">
@@ -449,7 +448,7 @@ export default function Home() {
           </div>
           <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-500">
-              © {new Date().getFullYear()} Transport ERP. Tous droits réservés.
+              © {new Date().getFullYear()} ROUTCH. Tous droits réservés.
             </p>
 
           </div>
