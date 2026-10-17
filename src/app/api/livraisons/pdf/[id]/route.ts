@@ -69,7 +69,7 @@ export async function GET(
     doc.image(logoBuffer, 50, 40, { width: 100 });
   } else {
     // Fallback to text header
-    doc.fontSize(22).text(companyParams?.nom || "TransportERP", 50, 40);
+    doc.fontSize(22).text(companyParams?.nom, 50, 40);
   }
 
   // Company info
@@ -282,7 +282,7 @@ if (livraison.date_signature) {
     );
 }
 
-  doc.fontSize(9).text(companyParams?.mentions_legales || "Document généré automatiquement par TransportERP.", 50, 730, {
+  doc.fontSize(9).text(companyParams?.mentions_legales || "Document généré automatiquement par ROUTCH.", 50, 730, {
     align: "center",
   });
 

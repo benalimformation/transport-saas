@@ -556,7 +556,7 @@ export async function GET(
     .fontSize(7)
     .text(
       companyParams?.mentions_legales ||
-        "Document CMR généré automatiquement par TransportERP. Document à vérifier et compléter selon les exigences réglementaires applicables.",
+        "Document CMR généré automatiquement par ROUTCH. Document à vérifier et compléter selon les exigences réglementaires applicables.",
       35,
       720,
       {
