@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
     let event;
     try {
       event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+
     } catch (err) {
       console.error('Erreur de vérification de la signature:', err);
       return NextResponse.json(
@@ -129,6 +130,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Vérification stricte du mode Stripe
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+      console.error('STRIPE_SECRET_KEY non configurée');
+      return NextResponse.json(
+        { error: 'Configuration serveur invalide' },
+        { status: 500 }
+      );
+    }
+
+    const isValidKey = stripeSecretKey.startsWith('sk_test_') || stripeSecretKey.startsWith('sk_live_');
+    if (!isValidKey) {
+      console.error('STRIPE_SECRET_KEY invalide');
+      return NextResponse.json(
+        { error: 'Configuration serveur invalide' },
+        { status: 500 }
+      );
+    }
+
+    const expectedLiveMode = stripeSecretKey.startsWith('sk_live_');
+    if (event.livemode !== expectedLiveMode) {
+      console.error(`Mode incohérent: événement ${event.livemode ? 'LIVE' : 'TEST'} avec configuration ${expectedLiveMode ? 'LIVE' : 'TEST'}`);
+      return NextResponse.json(
+        { error: 'Mode Stripe incohérent' },
+        { status: 400 }
+      );
+    }
     // Traiter l'événement
     switch (event.type) {
       case 'checkout.session.completed':
