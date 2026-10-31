@@ -78,3 +78,6 @@ migration_*.js
 extraction-rapport*
 contradiction-analysis*
 existence-report*
+
+.vercel
+.env*
