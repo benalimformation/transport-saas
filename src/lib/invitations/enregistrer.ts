@@ -11,6 +11,17 @@ export async function enregistrerInvitation(
 ) {
   const service = createSupabaseServiceClient();
 
+  // Libérer les invitations expirées avant toute nouvelle insertion.
+  // La fonction SQL ne modifie que les invitations encore "pending"
+  // dont la date d'expiration est dépassée.
+  const { error: expirationError } = await service.rpc(
+    "expirer_invitations_collaborateurs"
+  );
+
+  if (expirationError) {
+    throw new Error("Impossible de vérifier les invitations expirées.");
+  }
+
   const { token, tokenHash } = genererJetonInvitation();
 
   const { data, error } = await service

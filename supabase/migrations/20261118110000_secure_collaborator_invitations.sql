@@ -40,7 +40,7 @@ CREATE TABLE public.invitations_collaborateurs (
 );
 
 CREATE UNIQUE INDEX invitations_collaborateurs_pending_unique
-ON public.invitations_collaborateurs (LOWER(BTRIM(email)))
+ON public.invitations_collaborateurs (entreprise_id, LOWER(BTRIM(email)))
 WHERE statut = 'pending';
 
 ALTER TABLE public.invitations_collaborateurs ENABLE ROW LEVEL SECURITY;
@@ -72,4 +72,5 @@ $$;
 
 REVOKE ALL ON FUNCTION public.expirer_invitations_collaborateurs()
 FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.expirer_invitations_collaborateurs() TO service_role;
 COMMIT;
