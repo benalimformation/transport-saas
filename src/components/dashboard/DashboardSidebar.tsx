@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -130,6 +130,9 @@ export default function DashboardSidebar() {
   ];
 
   const adminNavItems: NavItem[] = [
+    ...(isAuthorized((profilData?.role as Role | undefined) ?? null, 'utilisateurs')
+      ? [{ icon: Users, label: 'Utilisateurs', href: '/utilisateurs', disabled: false }]
+      : []),
     { icon: Settings, label: 'Paramètres', href: '/parametres', disabled: false },
     ...(isAuthorized((profilData?.role as Role | undefined) ?? null, 'abonnement')
       ? [{ icon: CreditCard, label: 'Abonnement', href: '/abonnement', disabled: false }]
