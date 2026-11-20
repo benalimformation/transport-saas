@@ -17,6 +17,7 @@ export default function UtilisateursPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
+  const [utilisateurConnecteId, setUtilisateurConnecteId] = useState<string | null>(null);
 
   useEffect(() => {
     initialiserPage();
@@ -29,6 +30,8 @@ export default function UtilisateursPage() {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user.id;
+
+      setUtilisateurConnecteId(userId ?? null);
 
       if (!userId) {
         window.location.href = "/login";
@@ -95,29 +98,35 @@ export default function UtilisateursPage() {
 
   async function changerRole(id: string, role: string) {
     if (!entrepriseId) {
-      setError("ID d'entreprise manquant pour la mise à jour.");
+      setError("Entreprise introuvable.");
       return;
     }
 
+    setError(null);
+
     try {
-      const { error } = await supabase
-        .from("profils")
-        .update({ role })
-        .eq("id", id)
-        .eq("entreprise_id", entrepriseId);
+      const response = await fetch("/api/utilisateurs/role", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id, role }),
+      });
 
-      if (error) {
-        throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Modification impossible");
       }
 
-      if (entrepriseId) {
-        await chargerProfils(entrepriseId);
-      }
+      await chargerProfils(entrepriseId);
     } catch (err) {
-      setError("Erreur lors de la mise à jour: " + (err as Error).message);
+      setError(
+        "Erreur lors de la mise à jour : " +
+        (err as Error).message
+      );
     }
   }
-
   function formatDate(date: string | null) {
     if (!date) return "Non renseignée";
     return new Date(date).toLocaleDateString("fr-FR");
@@ -137,7 +146,7 @@ export default function UtilisateursPage() {
         href="/dashboard"
         className="mb-6 inline-block rounded bg-gray-700 px-4 py-2"
       >
-        ← Retour Dashboard
+          ← Retour Dashboard
       </a>
 
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
@@ -167,16 +176,23 @@ export default function UtilisateursPage() {
                   Créé le : {formatDate(profil.created_at)}
                 </p>
 
-                <select
-                  value={profil.role || "exploitant"}
-                  onChange={(e) => changerRole(profil.id, e.target.value)}
-                  className="mt-4 rounded bg-gray-800 p-3"
-                >
-                  <option value="admin">Admin</option>
-                  <option value="exploitant">Exploitant</option>
-                  <option value="chauffeur">Chauffeur</option>
-                  <option value="client">Client</option>
-                </select>
+                {profil.role === "super_admin" ? (
+                  <p className="mt-4 text-sm text-gray-400">
+                    Super administrateur — rôle protégé
+                  </p>
+                ) : (
+                  <select
+                    value={profil.role || "exploitant"}
+                    disabled={!utilisateurConnecteId || profil.id === utilisateurConnecteId}
+                    onChange={(e) => changerRole(profil.id, e.target.value)}
+                    className="mt-4 rounded bg-gray-800 p-3"
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="exploitant">Exploitant</option>
+                    <option value="chauffeur">Chauffeur</option>
+                    <option value="client">Client</option>
+                  </select>
+                )}
               </div>
             ))}
           </div>
