@@ -7,7 +7,8 @@
 
 import "server-only";
 import { getStripeClient } from "../stripe";
-import { supabase } from "../supabase";
+import { createSupabaseServiceClient } from "../supabase/service";
+const supabase = createSupabaseServiceClient();
 
 /**
  * Metadata structure for Stripe customer
@@ -97,6 +98,8 @@ export async function createStripeCustomerForEntreprise(
         ...params.metadata,
       },
       description: `Client ROUTCH: ${params.nom_entreprise}`,
+    }, {
+      idempotencyKey: `routch_customer_${params.entreprise_id}`,
     });
 
     // 5. Update database with stripe_customer_id
@@ -106,11 +109,7 @@ export async function createStripeCustomerForEntreprise(
       .eq("id", params.entreprise_id);
 
     if (updateError) {
-      // Log the error but don't fail - we have the Stripe customer ID
-      console.error(
-        `Erreur lors de la mise à jour de stripe_customer_id pour l'entreprise ${params.entreprise_id}:`,
-        updateError
-      );
+      throw new Error(`Impossible d enregistrer le client Stripe ${customer.id} : ${updateError.message}`);
     }
 
     return {
