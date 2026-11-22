@@ -1,45 +1,56 @@
-import "server-only";
+﻿import "server-only";
 import Stripe from "stripe";
 
 /**
- * Configuration et initialisation sécurisée du client Stripe côté serveur
- * 
- * Ce module est strictement serveur et ne doit jamais être importé côté client.
- * La clé secrète Stripe est chargée depuis les variables d'environnement.
+ * Vérifie la cohérence entre l'environnement et la clé Stripe.
+ * En cas de doute, les opérations Stripe sont bloquées.
  */
-
-/**
- * Fonction utilitaire pour vérifier la validité de la configuration Stripe
- * 
- * @returns {boolean} true si la configuration Stripe est valide et prête à être utilisée
- */
-export function isStripeConfigured(): boolean {
+function validateStripeConfiguration(): string {
   const key = process.env.STRIPE_SECRET_KEY;
-  return (
-    typeof key === "string" &&
-    key.length > 0 &&
-    key.startsWith("sk_")
-  );
-}
+  const vercelEnv = process.env.VERCEL_ENV;
 
-/**
- * Récupère l'instance du client Stripe sécurisée
- * 
- * @returns {Stripe} Instance configurée du client Stripe
- * @throws {Error} Si la configuration Stripe est invalide ou manquante
- */
-export function getStripeClient(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key || (!key.startsWith("sk_test_") && !key.startsWith("sk_live_"))) {
+    throw new Error("Clé secrète Stripe absente ou invalide.");
+  }
 
-  if (!key || !key.startsWith("sk_")) {
+  if (
+    vercelEnv !== undefined &&
+    !["production", "preview", "development"].includes(vercelEnv)
+  ) {
+    throw new Error("Environnement Vercel non reconnu.");
+  }
+
+  // Hors Vercel : seul le développement local est autorisé.
+  if (!vercelEnv && process.env.NODE_ENV === "production") {
     throw new Error(
-      "Impossible d'initialiser le client Stripe. " +
-        "Assurez-vous que STRIPE_SECRET_KEY est définie dans .env.local " +
-        "et qu'elle suit le format correct (sk_test_... ou sk_live_)."
+      "Environnement de production non identifié : Stripe bloqué."
     );
   }
 
-  // Le SDK Stripe utilise automatiquement la dernière version d'API compatible
+  const expectedMode = vercelEnv === "production" ? "live" : "test";
+  const actualMode = key.startsWith("sk_live_") ? "live" : "test";
+
+  if (expectedMode !== actualMode) {
+    throw new Error(
+      "Incompatibilité entre l'environnement et le mode Stripe."
+    );
+  }
+
+  return key;
+}
+
+export function isStripeConfigured(): boolean {
+  try {
+    validateStripeConfiguration();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getStripeClient(): Stripe {
+  const key = validateStripeConfiguration();
+
   return new Stripe(key, {
     typescript: true,
     maxNetworkRetries: 2,
@@ -47,10 +58,4 @@ export function getStripeClient(): Stripe {
   });
 }
 
-/**
- * Export par défaut du client Stripe pour une utilisation simplifiée
- * 
- * Attention : Cette exportation échouera si la configuration est invalide.
- * Pour un contrôle plus fin, utiliser `getStripeClient()` avec gestion d'erreur.
- */
 export default getStripeClient;
